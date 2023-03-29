@@ -1,0 +1,3 @@
+[submodule "LQR-based-Path-Tracking"]
+	path = LQR-based-Path-Tracking
+	url = https://github.com/derekhanbaliq/LQR-based-Path-Tracking.git
