@@ -45,12 +45,13 @@ class PurePursuit(Node):
         csv_data = np.loadtxt(map_path + '/' + self.map_name + '.csv', delimiter=';', skiprows=0)  # csv data
         self.waypoints = csv_data[:, 1:3]  # first row is indices
         self.numWaypoints = self.waypoints.shape[0]
-        self.ref_speed = csv_data[:, 5]
 
         self.visualization_init()
 
-        self.L = 1.5
-        self.steering_gain = 0.5
+        self.L = 2.0
+        self.threshold = 0.01
+        self.steering_gain = 1.0
+        self.speed_target_gain = 1.2
 
     def pose_callback(self, pose_msg):
         
@@ -67,8 +68,7 @@ class PurePursuit(Node):
 
         # Find closest waypoint to where we are
         self.distances = distance.cdist(self.currPos, self.waypoints, 'euclidean').reshape((self.numWaypoints))
-        self.closest_index = np.argmin(self.distances)
-        self.closestPoint = self.waypoints[self.closest_index]
+        self.closestPoint = self.waypoints[np.argmin(self.distances)]
 
         # Find target point
         targetPoint = self.get_closest_point_beyond_lookahead_dist(self.L)
@@ -83,20 +83,20 @@ class PurePursuit(Node):
         # publish drive message, don't forget to limit the steering angle.
         gamma = np.clip(gamma, -0.35, 0.35)
         self.drive_msg.drive.steering_angle = gamma
-        self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * self.ref_speed[self.closest_index]
+        self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * self.getVelocity()
         self.pub_drive.publish(self.drive_msg)
 
         # Visualizing points
         self.targetMarker.points = [Point(x = targetPoint[0], y = targetPoint[1], z = 0.0)]
         self.closestMarker.points = [Point(x = self.closestPoint[0], y = self.closestPoint[1], z = 0.0)]
 
-        self.markerArray.markers = [self.waypointMarker, self.targetMarker, self.closestMarker]
+        self.markerArray.markers = [self.waypointMarker, self.targetMarker, self.closestMarker, self.speedMarker]
         self.pub_vis.publish(self.markerArray)
         
     def get_closest_point_beyond_lookahead_dist(self, threshold):
-        point_index = self.closest_index
+
+        point_index = np.argmin(self.distances)
         dist = self.distances[point_index]
-        
         while dist < threshold:
             if self.is_clockwise:
                 point_index -= 1
@@ -112,6 +112,23 @@ class PurePursuit(Node):
         point = self.waypoints[point_index]
 
         return point
+
+    def getVelocity(self):
+        minV = 4.0
+        nominalV = 8.0
+
+        speedTarget = self.get_closest_point_beyond_lookahead_dist(self.speed_target_gain * self.L)
+        translatedSpeedTarget = self.translatePoint(speedTarget)
+
+        self.speedMarker.points = [Point(x = speedTarget[0], y = speedTarget[1], z = 0.0)]
+
+        theta = np.arctan2(translatedSpeedTarget[1], translatedSpeedTarget[0])
+        theta = np.abs(theta)
+        scaler = 1 - theta / (np.pi / 2.0)
+        velocity = scaler * nominalV
+        print(round(velocity, 2))
+        
+        return np.clip(velocity, minV, nominalV)
 
     def translatePoint(self, targetPoint):
         H = np.zeros((4, 4))
@@ -155,6 +172,17 @@ class PurePursuit(Node):
         self.closestMarker.scale.x = 0.2
         self.closestMarker.scale.y = 0.2
         self.closestMarker.id = 2
+        
+        # Cyan
+        self.speedMarker = Marker()
+        self.speedMarker.header.frame_id = 'map'
+        self.speedMarker.type = Marker.POINTS
+        self.speedMarker.color.b = 1.0
+        self.speedMarker.color.g = 1.0
+        self.speedMarker.color.a = 1.0
+        self.speedMarker.scale.x = 0.2
+        self.speedMarker.scale.y = 0.2
+        self.speedMarker.id = 3
 
 
 def main(args=None):
