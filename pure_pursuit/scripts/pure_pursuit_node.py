@@ -23,7 +23,7 @@ class PurePursuit(Node):
     def __init__(self):
         super().__init__('pure_pursuit_node')
 
-        self.is_real = False
+        self.is_real = True
         self.is_clockwise = False
         self.map_name = 'levine_2nd'
 
@@ -45,7 +45,7 @@ class PurePursuit(Node):
         csv_data = np.loadtxt(map_path + '/' + self.map_name + '.csv', delimiter=';', skiprows=0)  # csv data
         self.waypoints = csv_data[:, 1:3]  # first row is indices
         self.numWaypoints = self.waypoints.shape[0]
-        self.ref_speed = csv_data[:, 5]
+        self.ref_speed = csv_data[:, 5] * 0.6
 
         self.visualization_init()
 
@@ -85,6 +85,7 @@ class PurePursuit(Node):
         self.drive_msg.drive.steering_angle = gamma
         self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * self.ref_speed[self.closest_index]
         self.pub_drive.publish(self.drive_msg)
+        print("steering = {}, speed = {}".format(round(self.drive_msg.drive.steering_angle, 2), round(self.drive_msg.drive.speed, 2)))
 
         # Visualizing points
         self.targetMarker.points = [Point(x = targetPoint[0], y = targetPoint[1], z = 0.0)]

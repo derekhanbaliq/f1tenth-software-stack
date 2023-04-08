@@ -23,10 +23,13 @@ from utils import calc_nearest_point, pi_2_pi
 
 
 class Waypoint:
-    def __init__(self, map_name, is_clockwise=False, csv_data=None):
+    def __init__(self, map_name, is_real=False, is_clockwise=False, csv_data=None):
         self.x = csv_data[:, 1]
         self.y = csv_data[:, 2]
-        self.v = csv_data[:, 5]
+        if is_real:
+            self.v = csv_data[:, 5] * 0.4
+        else:
+            self.v = csv_data[:, 5]
         if map_name == 'levine_2nd':
             self.θ = csv_data[:, 3] + ( - math.pi / 2 if is_clockwise else math.pi / 2)  # coordinate matters!
         else:
@@ -81,7 +84,7 @@ class LQRSolver:
                            [0,          0],
                            [v / l_wb,   0],
                            [0,          dt]])  # l_wb is wheelbase
-        self.Q = np.diag([1, 0.0, 0.01, 0.0, 1])
+        self.Q = np.diag([1, 0.0, 0.1, 0.1, 0.5])
         self.R = np.diag([1, 1])
 
     def discrete_lqr(self):
@@ -124,7 +127,7 @@ class LQR(Node):
     def __init__(self):
         super().__init__('lqr_node')
 
-        self.is_real = False
+        self.is_real = True
         self.is_clockwise = False  # anticlockwise works better
         self.map_name = 'levine_2nd'
 
@@ -132,9 +135,13 @@ class LQR(Node):
         drive_topic = '/drive'
         odom_topic = '/pf/viz/inferred_pose' if self.is_real else '/ego_racecar/odom'
         visualization_topic = '/visualization_marker_array'
+        pf_vel_topic = '/pf/pose/odom'
 
         # Subscribe to pose
         self.sub_pose = self.create_subscription(PoseStamped if self.is_real else Odometry, odom_topic, self.pose_callback, 1)
+        # Subscribe to pf odom for current speed
+        if self.is_real:
+            self.sub_vel = self.create_subscription(Odometry, pf_vel_topic, self.pf_vel_callback, 1)
         # Publish to drive
         self.pub_drive = self.create_publisher(AckermannDriveStamped, drive_topic, 1)
         self.drive_msg = AckermannDriveStamped()
@@ -145,7 +152,7 @@ class LQR(Node):
         # load waypoints
         map_path = os.path.abspath(os.path.join('src', 'lqr', 'map_data'))
         csv_data = np.loadtxt(map_path + '/' + self.map_name + '.csv', delimiter=';', skiprows=0)  # csv data
-        self.waypoints = Waypoint(self.map_name, self.is_clockwise, csv_data)
+        self.waypoints = Waypoint(self.map_name, self.is_real, self.is_clockwise, csv_data)
 
         self.visualization_init()
 
@@ -153,21 +160,22 @@ class LQR(Node):
         self.wheelbase = 0.33
         self.car = CarState()
         self.x = LKVMState()
+        self.pf_curr_v = 0.0  # only for real car
 
     def pose_callback(self, pose_msg):
-        # Get current pose
+        # get current pose
         self.curr_x = pose_msg.pose.position.x if self.is_real else pose_msg.pose.pose.position.x
         self.curr_y = pose_msg.pose.position.y if self.is_real else pose_msg.pose.pose.position.y
         self.currPos = np.array([self.curr_x, self.curr_y]).reshape((1, 2))
 
-        # Transform quaternion pose message to rotation matrix
+        # transform quaternion pose message to rotation matrix
         quat = pose_msg.pose.orientation if self.is_real else pose_msg.pose.pose.orientation
         q = [quat.x, quat.y, quat.z, quat.w]
         R = transform.Rotation.from_quat(q)
         self.rot = R.as_matrix()
 
-        # TODO: check how to get speed during pf condition!
-        curr_v = pose_msg.twist.velocity.x if self.is_real else pose_msg.twist.twist.linear.x
+        # get current speed & yaw
+        curr_v = self.pf_curr_v if self.is_real else pose_msg.twist.twist.linear.x
         curr_yaw = math.atan2(2 * (q[3] * q[2] + q[0] * q[1]), 1 - 2 * (q[1] ** 2 + q[2] ** 2))
 
         steering, speed = self.lqr_steering_speed_control(self.curr_x, self.curr_y, curr_v, curr_yaw)
@@ -180,6 +188,11 @@ class LQR(Node):
 
         self.markerArray.markers = [self.waypointMarker, self.front_marker]
         self.pub_vis.publish(self.markerArray)
+        
+    def pf_vel_callback(self, odom_msg):
+        # get current speed from the odom msg of particle filter
+        self.pf_curr_v = odom_msg.twist.twist.linear.x
+        print('current velocity via pf = ', round(self.pf_curr_v, 5))
 
     def lqr_steering_speed_control(self, curr_x, curr_y, curr_v, curr_yaw):
         """
