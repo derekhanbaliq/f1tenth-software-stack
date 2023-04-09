@@ -27,7 +27,7 @@ class Waypoint:
         self.x = csv_data[:, 1]
         self.y = csv_data[:, 2]
         if is_real:
-            self.v = csv_data[:, 5] * 0.4
+            self.v = csv_data[:, 5] * 0.5
         else:
             self.v = csv_data[:, 5]
         if map_name == 'levine_2nd':
@@ -84,7 +84,7 @@ class LQRSolver:
                            [0,          0],
                            [v / l_wb,   0],
                            [0,          dt]])  # l_wb is wheelbase
-        self.Q = np.diag([1, 0.0, 0.1, 0.1, 0.5])
+        self.Q = np.diag([1.5, 0.5, 1.0, 0.5, 0.5])
         self.R = np.diag([1, 1])
 
     def discrete_lqr(self):

@@ -49,8 +49,8 @@ class PurePursuit(Node):
 
         self.visualization_init()
 
-        self.L = 1.5
-        self.steering_gain = 0.5
+        self.L = 2.2
+        self.steering_gain = 0.45
 
     def pose_callback(self, pose_msg):
         
