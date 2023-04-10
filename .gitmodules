@@ -1,9 +1,6 @@
 [submodule "LQR-based-Path-Tracking"]
 	path = LQR-based-Path-Tracking
 	url = https://github.com/derekhanbaliq/LQR-based-Path-Tracking.git
-[submodule "MPC"]
-	path = MPC
-	url = git@github.com:derekhanbaliq/MPC.git
 [submodule "f1tenth_traj_gen"]
 	path = f1tenth_traj_gen
 	url = git@github.com:derekhanbaliq/f1tenth_traj_gen.git
