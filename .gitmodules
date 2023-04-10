@@ -1,6 +1,3 @@
-[submodule "LQR-based-Path-Tracking"]
-	path = LQR-based-Path-Tracking
-	url = https://github.com/derekhanbaliq/LQR-based-Path-Tracking.git
 [submodule "f1tenth_traj_gen"]
 	path = f1tenth_traj_gen
 	url = git@github.com:derekhanbaliq/f1tenth_traj_gen.git
