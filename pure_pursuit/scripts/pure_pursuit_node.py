@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
-import rclpy
-from rclpy.node import Node
-from scipy.spatial import distance, transform
 
 import numpy as np
+from scipy.spatial import distance, transform
+import os
+
+import rclpy
+from rclpy.node import Node
+from rclpy.time import Time, Duration
 from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import Point, PointStamped, QuaternionStamped, TransformStamped, PoseStamped
 import tf2_ros
-from rclpy.time import Time, Duration
-from scipy.interpolate import splprep, splev
-
-import os
 
 
 class PurePursuit(Node):
@@ -24,7 +23,7 @@ class PurePursuit(Node):
         super().__init__('pure_pursuit_node')
 
         self.is_real = True
-        self.is_clockwise = False
+        self.is_ascending = True  # waypoint indices are ascending during tracking
         self.map_name = 'levine_2nd'
 
         # Topics & Subs, Pubs
@@ -41,7 +40,7 @@ class PurePursuit(Node):
         self.pub_vis = self.create_publisher(MarkerArray, visualization_topic, 1)
         self.markerArray = MarkerArray()
 
-        map_path = os.path.abspath(os.path.join('src', 'pure_pursuit', 'map_data'))
+        map_path = os.path.abspath(os.path.join('src', 'map_data'))
         csv_data = np.loadtxt(map_path + '/' + self.map_name + '.csv', delimiter=';', skiprows=0)  # csv data
         self.waypoints = csv_data[:, 1:3]  # first row is indices
         self.numWaypoints = self.waypoints.shape[0]
@@ -99,15 +98,15 @@ class PurePursuit(Node):
         dist = self.distances[point_index]
         
         while dist < threshold:
-            if self.is_clockwise:
-                point_index -= 1
-                if point_index < 0:
-                    point_index = len(self.waypoints) - 1
-                dist = self.distances[point_index]
-            else:
+            if self.is_ascending:
                 point_index += 1
                 if point_index >= len(self.waypoints):
                     point_index = 0
+                dist = self.distances[point_index]
+            else:
+                point_index -= 1
+                if point_index < 0:
+                    point_index = len(self.waypoints) - 1
                 dist = self.distances[point_index]
 
         point = self.waypoints[point_index]

@@ -23,7 +23,7 @@ from utils import calc_nearest_point, pi_2_pi
 
 
 class Waypoint:
-    def __init__(self, map_name, is_real=False, is_clockwise=False, csv_data=None):
+    def __init__(self, map_name, is_real=False, is_ascending=True, csv_data=None):
         self.x = csv_data[:, 1]
         self.y = csv_data[:, 2]
         if is_real:
@@ -31,7 +31,7 @@ class Waypoint:
         else:
             self.v = csv_data[:, 5]
         if map_name == 'levine_2nd':
-            self.θ = csv_data[:, 3] + ( - math.pi / 2 if is_clockwise else math.pi / 2)  # coordinate matters!
+            self.θ = csv_data[:, 3] + (math.pi / 2 if is_ascending else - math.pi / 2)  # coordinate matters!
         else:
             self.θ = csv_data[:, 3]
         self.γ = csv_data[:, 4]
@@ -128,7 +128,7 @@ class LQR(Node):
         super().__init__('lqr_node')
 
         self.is_real = True
-        self.is_clockwise = False  # anticlockwise works better
+        self.is_ascending = True  # waypoint indices are ascending during tracking
         self.map_name = 'levine_2nd'
 
         # Topics & Subs, Pubs
@@ -150,9 +150,9 @@ class LQR(Node):
         self.markerArray = MarkerArray()
 
         # load waypoints
-        map_path = os.path.abspath(os.path.join('src', 'lqr', 'map_data'))
+        map_path = os.path.abspath(os.path.join('src', 'map_data'))
         csv_data = np.loadtxt(map_path + '/' + self.map_name + '.csv', delimiter=';', skiprows=0)  # csv data
-        self.waypoints = Waypoint(self.map_name, self.is_real, self.is_clockwise, csv_data)
+        self.waypoints = Waypoint(self.map_name, self.is_real, self.is_ascending, csv_data)
 
         self.visualization_init()
 
