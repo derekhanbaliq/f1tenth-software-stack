@@ -1,7 +1,7 @@
 # ESE-615-Final-Project
 ESE 615 Final Project repository of Team 6. For various resources and software development.
 
-## Intro to Submodules
+## Intro to Supported Repos
 
 **f1tenth_traj_gen**: trajectory generation repo for solving min curvature QP with F1TENTH params. The dev is based on [TUM's global traj optim repo](https://github.com/TUMFTM/global_racetrajectory_optimization). For f1tenth dev, the tuned parameter is locally stored in IL folder of Derek's OMEN-16 via Windows 11 OS.
 
