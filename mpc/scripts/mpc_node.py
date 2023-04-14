@@ -79,7 +79,7 @@ class MPC(Node):
     def __init__(self):
         super().__init__('mpc_node')
         # use the MPC as a tracker (similar to pure pursuit)
-        self.is_real = False
+        self.is_real = True
         self.map_name = 'levine_2nd'
 
         # create ROS subscribers and publishers
@@ -125,15 +125,18 @@ class MPC(Node):
         # extract pose from ROS msg
         self.update_rotation_matrix(pose_msg)
         vehicle_state = self.update_vehicle_state(pose_msg)
+        
+        if self.is_real:
+            vehicle_state.v = -1 * vehicle_state.v  # negate the monitoring speed 
 
         # Calculate the next reference trajectory for the next T steps with current vehicle pose.
         # ref_x, ref_y, ref_yaw, ref_v are columns of self.waypoints
-        ref_path = self.calc_ref_trajectory(vehicle_state, self.waypoints[:, 1], self.waypoints[:, 2], self.waypoints[:, 3], self.waypoints[:, 5])
+        ref_path = self.calc_ref_trajectory(vehicle_state, self.waypoints[:, 1], self.waypoints[:, 2], self.waypoints[:, 3], 0.5*self.waypoints[:, 5])
         # print(ref_path)
         self.visualize_ref_traj_in_rviz(ref_path)
         
         x0 = [vehicle_state.x, vehicle_state.y, vehicle_state.v, vehicle_state.yaw]
-        print(vehicle_state.v)
+        print("Vehicle state", vehicle_state.v)
 
         # solve the MPC control problem
         (
@@ -149,6 +152,7 @@ class MPC(Node):
         # publish drive message.
         steer_output = self.odelta_v[0]
         speed_output = vehicle_state.v + self.oa[0] * self.config.DTK
+        print("speed output:", round(speed_output, 2))
 
         self.drive_msg.drive.steering_angle = steer_output
         self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * speed_output
@@ -547,6 +551,8 @@ class MPC(Node):
         mpc_a, mpc_delta, mpc_x, mpc_y, mpc_yaw, mpc_v = self.mpc_prob_solve(
             ref_path, path_predict, x0
         )
+        
+        print("mpc_v =", mpc_v)
 
         return mpc_a, mpc_delta, mpc_x, mpc_y, mpc_yaw, mpc_v, path_predict
 
