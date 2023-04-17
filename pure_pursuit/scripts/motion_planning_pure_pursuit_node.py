@@ -46,7 +46,7 @@ class PurePursuit(Node):
         self.markerArray = MarkerArray()
         
         # for motion planning
-        # Publish goal point in car frame to RRT node
+        # Publish goal point in car frame to reactive node
         self.pub_to_gf = self.create_publisher(Point, pp_point_topic, 1)
         # Subscribe to gap following points
         self.sub_gf = self.create_subscription(Point, gf_point_topic, self.gap_following_callback, 1)
@@ -67,9 +67,10 @@ class PurePursuit(Node):
         # self.L = 2.2
         # self.steering_gain = 0.45
 
-        self.L = 1.5
+        # sim params
+        self.L = 1.0
         self.steering_gain = 0.5
-        
+
         self.test_speed = 1.0
 
     def pose_callback(self, pose_msg):
@@ -121,7 +122,7 @@ class PurePursuit(Node):
         gf_point_y = gf_point_msg.y
         # print(f'received gf point:',gf_point_msg.x, gf_point_msg.y)
 
-        self.gf_point_marker.points = Point(x = gf_point_x, y = gf_point_y, z = 0.2)
+        self.gf_point_marker.points = [Point(x = gf_point_x, y = gf_point_y, z = 0.2)]
         self.vis_gf_point_pub.publish(self.gf_point_marker)
 
         # calculate speed & steering
