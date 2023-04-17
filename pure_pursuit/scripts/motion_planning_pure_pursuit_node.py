@@ -54,7 +54,10 @@ class PurePursuit(Node):
         # visualization of gap following point
         self.vis_gf_point_pub = self.create_publisher(Marker, vis_gf_marker_topic, 1)
 
-        map_path = os.path.abspath(os.path.join('src', 'map_data'))
+        # Derek's path
+        #map_path = os.path.realpath(os.path.join('src', 'map_data'))
+        # Sofia's path
+        map_path = os.path.realpath(os.path.join('src', 'ESE-615-Final-Project', 'map_data'))
         csv_data = np.loadtxt(map_path + '/' + self.map_name + '.csv', delimiter=';', skiprows=0)  # csv data
         self.waypoints = csv_data[:, 1:3]  # first row is indices
         self.numWaypoints = self.waypoints.shape[0]
@@ -131,6 +134,7 @@ class PurePursuit(Node):
         self.drive_msg.drive.steering_angle = gamma
         # self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * self.ref_speed[self.closest_index]
         self.drive_msg.drive.speed = self.test_speed
+        print("Speed:", self.drive_msg.drive.speed)
         
         # publish drive message
         self.pub_drive.publish(self.drive_msg)
