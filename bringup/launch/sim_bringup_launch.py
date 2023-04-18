@@ -40,11 +40,11 @@ def generate_launch_description():
             {"sim or real": sim},
             {"is ascending": True},
             {"map name": "skir_2_draw"},
-            {"map path": derek_map_path},
-            {"reference speed gain": 0.1},
+            {"map path": sofia_map_path},
+            {"reference speed gain": 1.0},
             {"lookahead distance": 1.0},
             {"steering gain": 0.5},
-            {"test speed": 2.0},
+            {"test speed": 1.0},
         ],
         # output="screen"
     )

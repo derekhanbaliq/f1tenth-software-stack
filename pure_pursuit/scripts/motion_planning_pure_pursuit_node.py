@@ -139,8 +139,8 @@ class PurePursuit(Node):
         gamma = self.steering_gain * (2 * gf_point_y / self.L**2)
         gamma = np.clip(gamma, -0.35, 0.35)
         self.drive_msg.drive.steering_angle = gamma
-        self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * self.ref_speed[self.closest_index]
-        # self.drive_msg.drive.speed = self.test_speed
+        # self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * self.ref_speed[self.closest_index]
+        self.drive_msg.drive.speed = self.test_speed
         # print("Speed:", self.drive_msg.drive.speed)
         
         # publish drive message
@@ -223,7 +223,7 @@ class PurePursuit(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    print("PurePursuit Initialized")
+    print("Pure Pursuit Initialized")
     pure_pursuit_node = PurePursuit()
     rclpy.spin(pure_pursuit_node)
 

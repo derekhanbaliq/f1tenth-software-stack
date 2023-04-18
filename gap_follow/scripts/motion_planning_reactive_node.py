@@ -4,7 +4,6 @@ from rclpy.node import Node
 
 import numpy as np
 from sensor_msgs.msg import LaserScan
-from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 from geometry_msgs.msg import Point
 from visualization_msgs.msg import Marker, MarkerArray
 
@@ -44,9 +43,11 @@ class ReactiveFollowGap(Node):
         self.max_sight = 10.0
         self.bubble_radius = 2
         self.extender_thres = 0.5
-        self.max_gap_safe_dist = 3.0
-
         self.proc_ranges = np.zeros(72)
+        self.max_gap_safe_dist = 1.2
+        self.best_point_x = 0.0
+        self.best_point_y = 0.0 
+        self.obstacle = 0
 
     def pure_pursuit_callback(self, pp_point_msg):
         # receive the lookahead point
@@ -54,27 +55,12 @@ class ReactiveFollowGap(Node):
         pp_point_y = pp_point_msg.y
         print("pp point", pp_point_x, pp_point_y)
 
-        # calculate raw gap following point
-
-        # find max length gap 
-        start_max_gap, end_max_gap = self.find_max_gap(self.proc_ranges)
-        # print('start_max_gap = ', start_max_gap)
-        # print('end_max_gap = ', end_max_gap)
-
-        self.vis_fan(start_max_gap, end_max_gap)
-        # self.vis_fan(0, 71)
-
-        best_i = self.find_best_point(start_max_gap, end_max_gap, self.proc_ranges)
-        best_i = int(np.clip(best_i, 0, len(self.proc_ranges)))  # 0 ~ 71
-        # print('best point = ', best_i)
-        # print('best point range = ', self.proc_ranges[best_i])
-
-        self.vis_raw_gf_point(best_i)
-
-        # TODO: integrate pp point and gf raw point
-
-        # publish the new point
-        self.pub_to_pp.publish(Point(x = float(pp_point_x), y = float(pp_point_y), z = 0.0))
+        if self.obstacle == 1:
+            # publish the new point
+            self.pub_to_pp.publish(Point(x = float(self.best_point_x), y = float(self.best_point_y), z = 0.0))
+            self.obstacle = 0
+        else:
+            self.pub_to_pp.publish(Point(x = float(pp_point_x), y = float(pp_point_y), z = 0.0))
 
     def preprocess_lidar(self, ranges):
         """ 
@@ -88,6 +74,22 @@ class ReactiveFollowGap(Node):
         
         proc_ranges = np.clip(proc_ranges, 0.0, self.max_sight)
         
+        return proc_ranges
+    
+    def bubble_danger_zone(self, data, proc_ranges):
+
+        bubble_radius = 17
+        closest_point_index = np.argmin(proc_ranges)
+        closest_point = np.min(proc_ranges)
+
+        # OBSTACLE CONDITION
+        walls_offset = 5
+        if closest_point < 1.0 and closest_point_index < len(proc_ranges)-walls_offset and closest_point_index > walls_offset:    # we do not want a bubble if the closest point is the wall on the sides
+            self.obstacle = 1
+            beginning_index = max(0,closest_point_index-bubble_radius)
+            end_index = min(len(proc_ranges),closest_point_index+bubble_radius)
+            proc_ranges[beginning_index:end_index] = 0.0
+
         return proc_ranges
 
     def disparity_extender(self, proc_ranges):
@@ -138,7 +140,7 @@ class ReactiveFollowGap(Node):
         return best_index
 
     def lidar_callback(self, data):
-        """ 
+        """
         Process each LiDAR scan as per the Follow Gap algorithm & publish an AckermannDriveStamped Message
         """
         # debugging setup
@@ -146,29 +148,28 @@ class ReactiveFollowGap(Node):
 
         # preprocessing & downsampling
         ranges = np.array(data.ranges[180:899])
-        self.proc_ranges = self.preprocess_lidar(ranges)
-        # print("downsampling = ", self.proc_ranges)
+
+        proc_ranges = self.preprocess_lidar(ranges)
         
         # bubble up
-        # proc_ranges = self.disparity_extender(proc_ranges)
-        # print("extender = ", proc_ranges)
+        self.proc_ranges = self.bubble_danger_zone(data, proc_ranges)
 
-        # # find max length gap 
-        # start_max_gap, end_max_gap = self.find_max_gap(proc_ranges)
-        # # print('start_max_gap = ', start_max_gap)
-        # # print('end_max_gap = ', end_max_gap)
+        # find max length gap 
+        if self.obstacle == 1:
+            start_max_gap, end_max_gap = self.find_max_gap(self.proc_ranges)
+            # visualize max gap
+            self.vis_fan(start_max_gap, end_max_gap)
 
-        # # find the best point in the gap 
-        # best_i = self.find_best_point(start_max_gap, end_max_gap, proc_ranges)
-        # best_i = int(np.clip(best_i, 0, len(proc_ranges)))  # 0 ~ 71
-        # print('best point = ', best_i)
-        # print('best point range = ', proc_ranges[best_i])
-        # angle = 180 / len(proc_ranges) * best_i
-        # print('best point angle = ', angle)
-        # x = np.cos(angle)
-        # y = np.sin(angle)
+            # find the best point in the gap 
+            best_i = self.find_best_point(start_max_gap, end_max_gap, proc_ranges)
+            degrees = best_i / 4.0
+            radians = degrees * (np.pi/180)
+            distance = self.proc_ranges[int(best_i)]
+            self.best_point_x = np.cos(radians) * distance
+            self.best_point_y = np.sin(radians) * distance
 
-        # self.pub_to_pp.publish(Point(x = x, y = y, z = 0.0))
+            # visualize best point
+            self.vis_raw_gf_point(best_i)
 
     def vis_raw_gf_point(self, best_i):
         best_i_angle = np.deg2rad(180 / len(self.proc_ranges) * best_i)
@@ -239,7 +240,7 @@ class ReactiveFollowGap(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    print("WallFollow Initialized")
+    print("Gap Follow Initialized")
     reactive_node = ReactiveFollowGap()
     rclpy.spin(reactive_node)
 
