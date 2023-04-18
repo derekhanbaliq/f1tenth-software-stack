@@ -52,6 +52,7 @@ class PurePursuit(Node):
         # Subscribe to gap following points
         self.sub_gf = self.create_subscription(Point, gf_point_topic, self.gap_following_callback, 1)
         self.sub_gf  # prevent unused variable warning
+        
         # visualization of gap following point
         self.vis_gf_point_pub = self.create_publisher(Marker, vis_gf_marker_topic, 1)
 
@@ -71,7 +72,6 @@ class PurePursuit(Node):
         # sim params
         self.L = float(self.get_parameter("lookahead distance").value)
         self.steering_gain = float(self.get_parameter("steering gain").value)
-
         self.test_speed = float(self.get_parameter("test speed").value)
 
     def declare_params(self):
@@ -141,7 +141,7 @@ class PurePursuit(Node):
         self.drive_msg.drive.steering_angle = gamma
         # self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * self.ref_speed[self.closest_index]
         self.drive_msg.drive.speed = self.test_speed
-        print("Speed:", self.drive_msg.drive.speed)
+        # print("Speed:", self.drive_msg.drive.speed)
         
         # publish drive message
         self.pub_drive.publish(self.drive_msg)

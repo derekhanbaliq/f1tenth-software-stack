@@ -18,16 +18,12 @@ class ReactiveFollowGap(Node):
         
         # Topics & Subs, Pubs
         lidar_scan_topic = '/scan'
-        drive_topic = '/drive'
         pp_point_topic = '/pp_point'
         gf_point_topic = '/gf_point'
 
         # Subscribe to LIDAR
         self.sub_scan = self.create_subscription(LaserScan, lidar_scan_topic, self.lidar_callback, 10)
         self.sub_scan  # prevent unused variable warning
-        # Publish to drive
-        self.pub_drive = self.create_publisher(AckermannDriveStamped, drive_topic, 10)
-        self.drive_msg = AckermannDriveStamped()
 
         # for motion planning
         # Subscribe to the pure pursuit point
@@ -119,53 +115,27 @@ class ReactiveFollowGap(Node):
         """ 
         Process each LiDAR scan as per the Follow Gap algorithm & publish an AckermannDriveStamped Message
         """
-        # # debugging setup
-        # np.set_printoptions(threshold=np.inf)
+        # debugging setup
+        np.set_printoptions(threshold=np.inf)
 
-        # # preprocessing & downsampling
-        # ranges = np.array(data.ranges[180:899])
-        # proc_ranges = self.preprocess_lidar(ranges)
-        # print("downsampling = ", proc_ranges)
+        # preprocessing & downsampling
+        ranges = np.array(data.ranges[180:899])
+        proc_ranges = self.preprocess_lidar(ranges)
+        print("downsampling = ", proc_ranges)
         
-        # # bubble up
-        # # proc_ranges = self.bubble_danger_zone(data, proc_ranges)
-        # # proc_ranges = self.disparity_extender(proc_ranges)
-        # # print("extender = ", proc_ranges)
+        # bubble up
+        # proc_ranges = self.bubble_danger_zone(data, proc_ranges)
+        # proc_ranges = self.disparity_extender(proc_ranges)
+        # print("extender = ", proc_ranges)
 
-        # # find max length gap 
-        # start_max_gap, end_max_gap = self.find_max_gap(proc_ranges)
-        # print('start_max_gap = ', start_max_gap)
-        # print('end_max_gap = ', end_max_gap)
+        # find max length gap 
+        start_max_gap, end_max_gap = self.find_max_gap(proc_ranges)
+        print('start_max_gap = ', start_max_gap)
+        print('end_max_gap = ', end_max_gap)
 
-        # # find the best point in the gap 
-        # best_i = self.find_best_point(start_max_gap, end_max_gap, proc_ranges)
-        # print(f'best point:', best_i)
-
-        pass
-
-        # # map steering_angle
-        # steering_angle = np.deg2rad(best_i * self.downsample_gap / 4.0 - 90.0)
-
-        # # set the velocity
-        # # velocity = 0.5
-        # if sum(data.ranges[530:549]) / 20 < 2.0:
-        #     velocity = 2.0
-        # # elif sum(data.ranges[530:549]) / 20 < 3.0:
-        # #     velocity = 3.5
-        # else:
-        #     velocity = 5.0
-        # # if abs(self.drive_msg.drive.steering_angle) < np.pi / 18:
-        # #     velocity = 5.0
-        # # else:
-        # #     velocity = 2.0
-        # print(f'velocity:', velocity)
-
-        # # Publish Drive message
-        # self.drive_msg.drive.steering_angle = steering_angle
-        # self.drive_msg.drive.speed = velocity
-        # self.pub_drive.publish(self.drive_msg)
-
-        # print(f'steering angle:', steering_angle)
+        # find the best point in the gap 
+        best_i = self.find_best_point(start_max_gap, end_max_gap, proc_ranges)
+        print(f'best point:', best_i)
 
 
 def main(args=None):

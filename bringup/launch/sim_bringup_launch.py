@@ -9,8 +9,8 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
     sim = False
-    derek_path = os.path.realpath(os.path.join('src', 'map_data'))
-    sofia_path = os.path.realpath(os.path.join('src', 'ESE-615-Final-Project', 'map_data'))
+    derek_map_path = os.path.realpath(os.path.join('src', 'map_data'))
+    sofia_map_path = os.path.realpath(os.path.join('src', 'ESE-615-Final-Project', 'map_data'))
 
     ld = LaunchDescription()
 
@@ -26,6 +26,11 @@ def generate_launch_description():
     gap_follow_node = Node(
         package="gap_follow",
         executable="motion_planning_reactive_node.py",
+        # parameters=[
+        #     {"downsample_gap": 10},
+        #     {"max_sight": 10},
+        # ],
+        # output="screen"
     )
 
     pure_pursuit_node = Node(
@@ -35,11 +40,11 @@ def generate_launch_description():
             {"sim or real": sim},
             {"is ascending": True},
             {"map name": "skir_2_draw"},
-            {"map path": derek_path},
+            {"map path": derek_map_path},
             {"reference speed gain": 1.0},
             {"lookahead distance": 1.0},
             {"steering gain": 0.5},
-            {"test speed": 1.0},
+            {"test speed": 2.0},
         ],
         output="screen"
     )
