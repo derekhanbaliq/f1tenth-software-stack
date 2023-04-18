@@ -30,7 +30,7 @@ def generate_launch_description():
         #     {"downsample_gap": 10},
         #     {"max_sight": 10},
         # ],
-        # output="screen"
+        output="screen"
     )
 
     pure_pursuit_node = Node(
@@ -41,12 +41,12 @@ def generate_launch_description():
             {"is ascending": True},
             {"map name": "skir_2_draw"},
             {"map path": derek_map_path},
-            {"reference speed gain": 1.0},
+            {"reference speed gain": 0.1},
             {"lookahead distance": 1.0},
             {"steering gain": 0.5},
             {"test speed": 2.0},
         ],
-        output="screen"
+        # output="screen"
     )
     
     ld.add_action(gym_bridge_launch)

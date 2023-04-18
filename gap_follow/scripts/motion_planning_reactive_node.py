@@ -6,6 +6,7 @@ import numpy as np
 from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 from geometry_msgs.msg import Point
+from visualization_msgs.msg import Marker, MarkerArray
 
 
 class ReactiveFollowGap(Node):
@@ -20,6 +21,8 @@ class ReactiveFollowGap(Node):
         lidar_scan_topic = '/scan'
         pp_point_topic = '/pp_point'
         gf_point_topic = '/gf_point'
+        vis_gf_marker_topic = '/vis_raw_gf_marker'
+        vis_gap_fan_marker_topic = '/vis_gap_fan_marker_arr'
 
         # Subscribe to LIDAR
         self.sub_scan = self.create_subscription(LaserScan, lidar_scan_topic, self.lidar_callback, 10)
@@ -32,23 +35,46 @@ class ReactiveFollowGap(Node):
         # Publish modified goal point in car frame to pure pursuit node
         self.pub_to_pp = self.create_publisher(Point, gf_point_topic, 1)
         
+        # visualization of gap following point
+        self.pub_vis_gf_point = self.create_publisher(Marker, vis_gf_marker_topic, 1)
+        self.pub_vis_gap_fan = self.create_publisher(MarkerArray, vis_gap_fan_marker_topic, 1)
+
         # params
         self.downsample_gap = 10
-        self.max_sight = 4.0
+        self.max_sight = 10.0
         self.bubble_radius = 2
         self.extender_thres = 0.5
-        self.max_gap_safe_dist = 1.2
+        self.max_gap_safe_dist = 3.0
+
+        self.proc_ranges = np.zeros(72)
 
     def pure_pursuit_callback(self, pp_point_msg):
         # receive the lookahead point
         pp_point_x = pp_point_msg.x
         pp_point_y = pp_point_msg.y
+        print("pp point", pp_point_x, pp_point_y)
 
-        # TODO: modify this point
+        # calculate raw gap following point
+
+        # find max length gap 
+        start_max_gap, end_max_gap = self.find_max_gap(self.proc_ranges)
+        # print('start_max_gap = ', start_max_gap)
+        # print('end_max_gap = ', end_max_gap)
+
+        self.vis_fan(start_max_gap, end_max_gap)
+        # self.vis_fan(0, 71)
+
+        best_i = self.find_best_point(start_max_gap, end_max_gap, self.proc_ranges)
+        best_i = int(np.clip(best_i, 0, len(self.proc_ranges)))  # 0 ~ 71
+        # print('best point = ', best_i)
+        # print('best point range = ', self.proc_ranges[best_i])
+
+        self.vis_raw_gf_point(best_i)
+
+        # TODO: integrate pp point and gf raw point
 
         # publish the new point
         self.pub_to_pp.publish(Point(x = float(pp_point_x), y = float(pp_point_y), z = 0.0))
-
 
     def preprocess_lidar(self, ranges):
         """ 
@@ -120,22 +146,95 @@ class ReactiveFollowGap(Node):
 
         # preprocessing & downsampling
         ranges = np.array(data.ranges[180:899])
-        proc_ranges = self.preprocess_lidar(ranges)
-        print("downsampling = ", proc_ranges)
+        self.proc_ranges = self.preprocess_lidar(ranges)
+        # print("downsampling = ", self.proc_ranges)
         
         # bubble up
-        # proc_ranges = self.bubble_danger_zone(data, proc_ranges)
         # proc_ranges = self.disparity_extender(proc_ranges)
         # print("extender = ", proc_ranges)
 
-        # find max length gap 
-        start_max_gap, end_max_gap = self.find_max_gap(proc_ranges)
-        print('start_max_gap = ', start_max_gap)
-        print('end_max_gap = ', end_max_gap)
+        # # find max length gap 
+        # start_max_gap, end_max_gap = self.find_max_gap(proc_ranges)
+        # # print('start_max_gap = ', start_max_gap)
+        # # print('end_max_gap = ', end_max_gap)
 
-        # find the best point in the gap 
-        best_i = self.find_best_point(start_max_gap, end_max_gap, proc_ranges)
-        print(f'best point:', best_i)
+        # # find the best point in the gap 
+        # best_i = self.find_best_point(start_max_gap, end_max_gap, proc_ranges)
+        # best_i = int(np.clip(best_i, 0, len(proc_ranges)))  # 0 ~ 71
+        # print('best point = ', best_i)
+        # print('best point range = ', proc_ranges[best_i])
+        # angle = 180 / len(proc_ranges) * best_i
+        # print('best point angle = ', angle)
+        # x = np.cos(angle)
+        # y = np.sin(angle)
+
+        # self.pub_to_pp.publish(Point(x = x, y = y, z = 0.0))
+
+    def vis_raw_gf_point(self, best_i):
+        best_i_angle = np.deg2rad(180 / len(self.proc_ranges) * best_i)
+        best_i_x = np.sin(best_i_angle)
+        best_i_y = -np.cos(best_i_angle)
+
+        # yellow
+        gf_point_marker = Marker()
+        gf_point_marker.header.frame_id = 'ego_racecar/base_link'  # if global then 'map'
+        gf_point_marker.type = Marker.POINTS
+        gf_point_marker.color.r = 0.75
+        gf_point_marker.color.g = 0.75
+        gf_point_marker.color.a = 1.0
+        gf_point_marker.scale.x = 0.2
+        gf_point_marker.scale.y = 0.2
+        gf_point_marker.id = 6
+
+        gf_point_marker.points = [Point(x = best_i_x, y = best_i_y, z = 0.2)]
+        
+        self.pub_vis_gf_point.publish(gf_point_marker)
+
+    def vis_fan(self, start_max_gap, end_max_gap):
+        fan_marker_arr = MarkerArray()
+        fan_marker_arr.markers = []
+
+        # start line
+        fan_start_angle = np.deg2rad(180 / len(self.proc_ranges) * start_max_gap)
+        fan_start_x = np.sin(fan_start_angle)
+        fan_start_y = -np.cos(fan_start_angle)
+
+        fan_start_point_marker = Marker()
+        fan_start_point_marker.header.frame_id = 'ego_racecar/base_link'  # if global then 'map'
+        fan_start_point_marker.type = Marker.LINE_STRIP
+        fan_start_point_marker.color.b = 0.75
+        fan_start_point_marker.color.g = 0.75
+        fan_start_point_marker.color.a = 1.0
+        fan_start_point_marker.scale.x = 0.04
+        fan_start_point_marker.scale.y = 0.04
+        fan_start_point_marker.id = 4
+
+        fan_start_point_marker.points = [Point(x = fan_start_x, y = fan_start_y, z = 0.2), Point(x = 0., y = 0., z = 0.2)]
+        
+        fan_marker_arr.markers.append(fan_start_point_marker)
+
+        # end line
+        fan_end_angle = np.deg2rad(180 / len(self.proc_ranges) * end_max_gap)
+        fan_end_x = np.sin(fan_end_angle)
+        fan_end_y = -np.cos(fan_end_angle)
+
+        fan_end_point_marker = Marker()
+        fan_end_point_marker.header.frame_id = 'ego_racecar/base_link'  # if global then 'map'
+        fan_end_point_marker.type = Marker.LINE_STRIP
+        fan_end_point_marker.color.r = 0.
+        fan_end_point_marker.color.g = 0.
+        fan_end_point_marker.color.b = 0.
+        fan_end_point_marker.color.g = 0.
+        fan_end_point_marker.color.a = 1.0
+        fan_end_point_marker.scale.x = 0.04
+        fan_end_point_marker.scale.y = 0.04
+        fan_end_point_marker.id = 5
+
+        fan_end_point_marker.points = [Point(x = fan_end_x, y = fan_end_y, z = 0.2), Point(x = 0., y = 0., z = 0.2)]
+        
+        fan_marker_arr.markers.append(fan_end_point_marker)
+
+        self.pub_vis_gap_fan.publish(fan_marker_arr)
 
 
 def main(args=None):
