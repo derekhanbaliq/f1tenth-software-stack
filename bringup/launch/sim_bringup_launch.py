@@ -44,7 +44,7 @@ def generate_launch_description():
             {"reference speed gain": 1.0},
             {"lookahead distance": 1.0},
             {"steering gain": 0.5},
-            {"test speed": 1.0},
+            {"test speed": 2.0},
         ],
         # output="screen"
     )

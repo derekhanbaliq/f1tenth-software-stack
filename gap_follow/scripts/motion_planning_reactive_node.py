@@ -39,11 +39,10 @@ class ReactiveFollowGap(Node):
         self.pub_vis_gap_fan = self.create_publisher(MarkerArray, vis_gap_fan_marker_topic, 1)
 
         # params
-        self.downsample_gap = 10
-        self.max_sight = 10.0
-        self.bubble_radius = 2
-        self.extender_thres = 0.5
         self.proc_ranges = np.zeros(72)
+        self.downsample_gap = 10
+        self.bubble_radius = 1
+        self.extender_thres = 0.5
         self.max_gap_safe_dist = 1.2
         self.best_point_x = 0.0
         self.best_point_y = 0.0 
@@ -71,22 +70,21 @@ class ReactiveFollowGap(Node):
         for i in range(len(proc_ranges)):
             proc_ranges[i] = sum(ranges[i * self.downsample_gap : (i + 1) * self.downsample_gap]) / self.downsample_gap
         
-        proc_ranges = np.clip(proc_ranges, 0.0, self.max_sight)
+        proc_ranges = np.clip(proc_ranges, 0.0, 10.0)
         
         return proc_ranges
     
     def bubble_danger_zone(self, data, proc_ranges):
 
-        bubble_radius = 17
         closest_point_index = np.argmin(proc_ranges)
         closest_point = np.min(proc_ranges)
 
         # OBSTACLE CONDITION
         walls_offset = 1
-        if closest_point < 1.0 and closest_point_index < len(proc_ranges)-walls_offset and closest_point_index > walls_offset:    # we do not want a bubble if the closest point is the wall on the sides
+        if closest_point < 1.2 and closest_point_index < len(proc_ranges)-walls_offset and closest_point_index > walls_offset:    # we do not want a bubble if the closest point is the wall on the sides
             self.obstacle = 1
-            beginning_index = max(0,closest_point_index-bubble_radius)
-            end_index = min(len(proc_ranges),closest_point_index+bubble_radius)
+            beginning_index = max(0,closest_point_index-self.bubble_radius)
+            end_index = min(len(proc_ranges),closest_point_index+self.bubble_radius)
             proc_ranges[beginning_index:end_index] = 0.0
         else:
             self.obstacle = 0
@@ -137,8 +135,9 @@ class ReactiveFollowGap(Node):
         # deepest_index = np.argmax(ranges[start_i:end_i])
         # deepest_index += start_i
         best_index = (start_i + end_i) / 2
-
-        return best_index
+        best_i_angle = np.deg2rad(180 / len(self.proc_ranges) * best_index)
+        self.best_point_x = np.sin(best_i_angle)
+        self.best_point_y = -np.cos(best_i_angle)
 
     def lidar_callback(self, data):
         """
@@ -162,10 +161,7 @@ class ReactiveFollowGap(Node):
             self.vis_fan(start_max_gap, end_max_gap)
 
             # find the best point in the gap 
-            best_i = self.find_best_point(start_max_gap, end_max_gap, proc_ranges)
-            best_i_angle = np.deg2rad(180 / len(self.proc_ranges) * best_i)
-            self.best_point_x = np.sin(best_i_angle)
-            self.best_point_y = -np.cos(best_i_angle)
+            self.find_best_point(start_max_gap, end_max_gap, proc_ranges)
 
             # visualize best point
             self.vis_raw_gf_point()
