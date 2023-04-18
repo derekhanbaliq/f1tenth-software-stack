@@ -44,7 +44,7 @@ class ReactiveFollowGap(Node):
         self.max_sight = 10.0
         self.bubble_radius = 2
         self.extender_thres = 0.5
-        self.max_gap_safe_dist = 3.0
+        self.max_gap_safe_dist = 1.5
 
         self.proc_ranges = np.zeros(72)
 
@@ -52,7 +52,7 @@ class ReactiveFollowGap(Node):
         # receive the lookahead point
         pp_point_x = pp_point_msg.x
         pp_point_y = pp_point_msg.y
-        print("pp point", pp_point_x, pp_point_y)
+        # print("pp point", pp_point_x, pp_point_y)
 
         # calculate raw gap following point
 
@@ -60,6 +60,8 @@ class ReactiveFollowGap(Node):
         start_max_gap, end_max_gap = self.find_max_gap(self.proc_ranges)
         # print('start_max_gap = ', start_max_gap)
         # print('end_max_gap = ', end_max_gap)
+        start_max_gap = int(np.clip(start_max_gap, 0, len(self.proc_ranges) - 1))
+        end_max_gap = int(np.clip(end_max_gap, 0, len(self.proc_ranges) - 1))
 
         self.vis_fan(start_max_gap, end_max_gap)
         # self.vis_fan(0, 71)
@@ -72,9 +74,22 @@ class ReactiveFollowGap(Node):
         self.vis_raw_gf_point(best_i)
 
         # TODO: integrate pp point and gf raw point
+        best_i_angle = np.deg2rad(180 / len(self.proc_ranges) * best_i)
+        best_i_x = np.sin(best_i_angle)
+        best_i_y = -np.cos(best_i_angle)
+
+        dist = np.sqrt((pp_point_x - best_i_x) ** 2 + (pp_point_y - best_i_y) ** 2)
+        # print(dist)
+
+        x = best_i_x * 0.6 + pp_point_x * 0.4
+        y = best_i_y * 0.6 + pp_point_y * 0.4
+
+        # if 0.3 < dist < 1.5:
+        #     x  = best_i_x
+        #     y  = best_i_y
 
         # publish the new point
-        self.pub_to_pp.publish(Point(x = float(pp_point_x), y = float(pp_point_y), z = 0.0))
+        self.pub_to_pp.publish(Point(x = float(x), y = float(y), z = 0.0))
 
     def preprocess_lidar(self, ranges):
         """ 
@@ -196,8 +211,8 @@ class ReactiveFollowGap(Node):
 
         # start line
         fan_start_angle = np.deg2rad(180 / len(self.proc_ranges) * start_max_gap)
-        fan_start_x = np.sin(fan_start_angle)
-        fan_start_y = -np.cos(fan_start_angle)
+        fan_start_x = np.sin(fan_start_angle) * self.proc_ranges[start_max_gap]
+        fan_start_y = -np.cos(fan_start_angle) * self.proc_ranges[start_max_gap]
 
         fan_start_point_marker = Marker()
         fan_start_point_marker.header.frame_id = 'ego_racecar/base_link'  # if global then 'map'
@@ -215,8 +230,8 @@ class ReactiveFollowGap(Node):
 
         # end line
         fan_end_angle = np.deg2rad(180 / len(self.proc_ranges) * end_max_gap)
-        fan_end_x = np.sin(fan_end_angle)
-        fan_end_y = -np.cos(fan_end_angle)
+        fan_end_x = np.sin(fan_end_angle) * self.proc_ranges[end_max_gap]
+        fan_end_y = -np.cos(fan_end_angle) * self.proc_ranges[end_max_gap]
 
         fan_end_point_marker = Marker()
         fan_end_point_marker.header.frame_id = 'ego_racecar/base_link'  # if global then 'map'
