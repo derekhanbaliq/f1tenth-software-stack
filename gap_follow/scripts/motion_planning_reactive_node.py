@@ -45,7 +45,11 @@ class ReactiveFollowGap(Node):
         self.extender_len = 2
         self.extender_thres = 0.5
         self.max_gap_safe_dist = 1.5
+<<<<<<< HEAD
         self.pp_ratio = 1.0
+=======
+        self.pp_ratio = 0.4
+>>>>>>> c5d33298152a04c4509b8398d9bfeaaaf94f144f
         self.lateral_dist_thres = 0.6  # lateral deviation constraint
 
         self.proc_ranges = np.zeros(72)

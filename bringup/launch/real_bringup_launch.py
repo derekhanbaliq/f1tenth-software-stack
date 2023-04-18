@@ -56,9 +56,15 @@ def generate_launch_description():
             {"is ascending": True},
             {"map name": "skir_2_draw"},
             {"map path": derek_map_path},
+<<<<<<< HEAD
             {"reference speed gain": 0.6},
             {"lookahead distance": 2.2},
             {"steering gain": 0.45},
+=======
+            {"reference speed gain": 0.7},
+            {"lookahead distance": 1.0},
+            {"steering gain": 0.5},
+>>>>>>> c5d33298152a04c4509b8398d9bfeaaaf94f144f
             {"test speed": 2.0},
         ],
         # output="screen"
