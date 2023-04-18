@@ -58,7 +58,6 @@ class ReactiveFollowGap(Node):
         if self.obstacle == 1:
             # publish the new point
             self.pub_to_pp.publish(Point(x = float(self.best_point_x), y = float(self.best_point_y), z = 0.0))
-            self.obstacle = 0
         else:
             self.pub_to_pp.publish(Point(x = float(pp_point_x), y = float(pp_point_y), z = 0.0))
 
@@ -83,12 +82,14 @@ class ReactiveFollowGap(Node):
         closest_point = np.min(proc_ranges)
 
         # OBSTACLE CONDITION
-        walls_offset = 5
+        walls_offset = 1
         if closest_point < 1.0 and closest_point_index < len(proc_ranges)-walls_offset and closest_point_index > walls_offset:    # we do not want a bubble if the closest point is the wall on the sides
             self.obstacle = 1
             beginning_index = max(0,closest_point_index-bubble_radius)
             end_index = min(len(proc_ranges),closest_point_index+bubble_radius)
             proc_ranges[beginning_index:end_index] = 0.0
+        else:
+            self.obstacle = 0
 
         return proc_ranges
 
@@ -162,20 +163,14 @@ class ReactiveFollowGap(Node):
 
             # find the best point in the gap 
             best_i = self.find_best_point(start_max_gap, end_max_gap, proc_ranges)
-            degrees = best_i / 4.0
-            radians = degrees * (np.pi/180)
-            distance = self.proc_ranges[int(best_i)]
-            self.best_point_x = np.cos(radians) * distance
-            self.best_point_y = np.sin(radians) * distance
+            best_i_angle = np.deg2rad(180 / len(self.proc_ranges) * best_i)
+            self.best_point_x = np.sin(best_i_angle)
+            self.best_point_y = -np.cos(best_i_angle)
 
             # visualize best point
-            self.vis_raw_gf_point(best_i)
+            self.vis_raw_gf_point()
 
-    def vis_raw_gf_point(self, best_i):
-        best_i_angle = np.deg2rad(180 / len(self.proc_ranges) * best_i)
-        best_i_x = np.sin(best_i_angle)
-        best_i_y = -np.cos(best_i_angle)
-
+    def vis_raw_gf_point(self):
         # yellow
         gf_point_marker = Marker()
         gf_point_marker.header.frame_id = 'ego_racecar/base_link'  # if global then 'map'
@@ -187,7 +182,7 @@ class ReactiveFollowGap(Node):
         gf_point_marker.scale.y = 0.2
         gf_point_marker.id = 6
 
-        gf_point_marker.points = [Point(x = best_i_x, y = best_i_y, z = 0.2)]
+        gf_point_marker.points = [Point(x = self.best_point_x, y = self.best_point_y, z = 0.2)]
         
         self.pub_vis_gf_point.publish(gf_point_marker)
 
