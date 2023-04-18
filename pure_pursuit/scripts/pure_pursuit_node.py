@@ -22,7 +22,7 @@ class PurePursuit(Node):
     def __init__(self):
         super().__init__('pure_pursuit_node')
 
-        self.is_real = False
+        self.is_real = True
         self.is_ascending = True  # waypoint indices are ascending during tracking
         # self.map_name = 'levine_2nd'
         self.map_name = 'skir_2_draw'
@@ -45,18 +45,22 @@ class PurePursuit(Node):
         csv_data = np.loadtxt(map_path + '/' + self.map_name + '.csv', delimiter=';', skiprows=0)  # csv data
         self.waypoints = csv_data[:, 1:3]  # first row is indices
         self.numWaypoints = self.waypoints.shape[0]
-        # self.ref_speed = csv_data[:, 5] * 0.6  # max speed for levine 2nd - real is 2m/s
-        self.ref_speed = csv_data[:, 5]  # max speed - sim is 10m/s
+        self.ref_speed = csv_data[:, 5] * 0.6  # max speed for levine 2nd - real is 2m/s
+        #self.ref_speed = csv_data[:, 5]  # max speed - sim is 10m/s
 
         self.visualization_init()
 
         # params for levine 2nd - real
         # self.L = 2.2
         # self.steering_gain = 0.45
+        
+        # params for skir - real
+        self.L = 2.2
+        self.steering_gain = 0.45
 
         # sim params
-        self.L = 1.5
-        self.steering_gain = 0.5
+        # self.L = 1.5
+        # self.steering_gain = 0.5
 
     def pose_callback(self, pose_msg):
         

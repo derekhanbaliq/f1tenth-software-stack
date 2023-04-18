@@ -11,7 +11,7 @@ from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker, MarkerArray
-from geometry_msgs.msg import Point, PointStamped, QuaternionStamped, TransformStamped, PoseStamped
+from geometry_msgs.msg import Point, PointStamped, Quaternion, QuaternionStamped, TransformStamped, PoseStamped, Pose, PoseArray
 import tf2_ros
 
 
@@ -48,7 +48,7 @@ class PurePursuit(Node):
         
         # for motion planning
         # Publish goal point in car frame to reactive node
-        self.pub_to_gf = self.create_publisher(Point, pp_point_topic, 1)
+        self.pub_to_gf = self.create_publisher(PoseArray, pp_point_topic, 1)
         # Subscribe to gap following points
         self.sub_gf = self.create_subscription(Point, gf_point_topic, self.gap_following_callback, 1)
         self.sub_gf  # prevent unused variable warning
@@ -106,8 +106,22 @@ class PurePursuit(Node):
 
         # Homogeneous transformation
         translatedTargetPoint = self.translatePoint(targetPoint)
+
+        pose_arr_msg = PoseArray()
+        pose_msg_target = Pose()
+        pose_msg_target.position.x = translatedTargetPoint[0]
+        pose_msg_target.position.y = translatedTargetPoint[1]
+        pose_arr_msg.poses.append(pose_msg_target)
+        pose_msg_closest = Pose()
+        pose_msg_closest.position.x = self.closestPoint[0]
+        pose_msg_closest.position.y = self.closestPoint[1]
+        pose_arr_msg.poses.append(pose_msg_closest)
+        pose_msg_curr = Pose()
+        pose_msg_curr.position.x = self.currX
+        pose_msg_curr.position.y = self.currY
+        pose_arr_msg.poses.append(pose_msg_curr)
         
-        self.pub_to_gf.publish(Point(x = translatedTargetPoint[0], y = translatedTargetPoint[1], z = 0.0))
+        self.pub_to_gf.publish(pose_arr_msg)
 
         # calculate curvature/steering angle
         # y = translatedTargetPoint[1]
@@ -203,11 +217,12 @@ class PurePursuit(Node):
         # Blue
         self.closestMarker = Marker()
         self.closestMarker.header.frame_id = 'map'
-        self.closestMarker.type = Marker.POINTS
+        self.closestMarker.type = Marker.SPHERE_LIST
         self.closestMarker.color.b = 0.75
-        self.closestMarker.color.a = 1.0
-        self.closestMarker.scale.x = 0.2
-        self.closestMarker.scale.y = 0.2
+        self.closestMarker.color.a = 0.4
+        self.closestMarker.scale.x = 1.2
+        self.closestMarker.scale.y = 1.2
+        self.closestMarker.scale.z = 1.2
         self.closestMarker.id = 2
 
         # green

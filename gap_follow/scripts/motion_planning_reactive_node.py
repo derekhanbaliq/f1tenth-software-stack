@@ -5,7 +5,7 @@ from rclpy.node import Node
 import numpy as np
 from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import Point, PoseArray
 from visualization_msgs.msg import Marker, MarkerArray
 
 
@@ -30,7 +30,7 @@ class ReactiveFollowGap(Node):
 
         # for motion planning
         # Subscribe to the pure pursuit point
-        self.sub_pp = self.create_subscription(Point, pp_point_topic, self.pure_pursuit_callback, 1)
+        self.sub_pp = self.create_subscription(PoseArray, pp_point_topic, self.pure_pursuit_callback, 1)
         self.sub_pp  # prevent unused variable warning
         # Publish modified goal point in car frame to pure pursuit node
         self.pub_to_pp = self.create_publisher(Point, gf_point_topic, 1)
@@ -42,51 +42,53 @@ class ReactiveFollowGap(Node):
         # params
         self.downsample_gap = 10
         self.max_sight = 10.0
-        self.bubble_radius = 2
+        self.extender_len = 2
         self.extender_thres = 0.5
         self.max_gap_safe_dist = 1.5
+        self.pp_ratio = 1.0
+        self.lateral_dist_thres = 0.6  # lateral deviation constraint
 
         self.proc_ranges = np.zeros(72)
 
     def pure_pursuit_callback(self, pp_point_msg):
-        # receive the lookahead point
-        pp_point_x = pp_point_msg.x
-        pp_point_y = pp_point_msg.y
-        # print("pp point", pp_point_x, pp_point_y)
+        # 1 - receive the lookahead point
+        lookahead_point_x = pp_point_msg.poses[0].position.x
+        lookahead_point_y = pp_point_msg.poses[0].position.y
 
-        # calculate raw gap following point
-
+        # 2 - calculate raw gap following point
         # find max length gap 
         start_max_gap, end_max_gap = self.find_max_gap(self.proc_ranges)
         # print('start_max_gap = ', start_max_gap)
         # print('end_max_gap = ', end_max_gap)
         start_max_gap = int(np.clip(start_max_gap, 0, len(self.proc_ranges) - 1))
         end_max_gap = int(np.clip(end_max_gap, 0, len(self.proc_ranges) - 1))
-
         self.vis_fan(start_max_gap, end_max_gap)
-        # self.vis_fan(0, 71)
 
         best_i = self.find_best_point(start_max_gap, end_max_gap, self.proc_ranges)
         best_i = int(np.clip(best_i, 0, len(self.proc_ranges)))  # 0 ~ 71
         # print('best point = ', best_i)
         # print('best point range = ', self.proc_ranges[best_i])
-
         self.vis_raw_gf_point(best_i)
-
-        # TODO: integrate pp point and gf raw point
+        
         best_i_angle = np.deg2rad(180 / len(self.proc_ranges) * best_i)
         best_i_x = np.sin(best_i_angle)
         best_i_y = -np.cos(best_i_angle)
 
-        dist = np.sqrt((pp_point_x - best_i_x) ** 2 + (pp_point_y - best_i_y) ** 2)
-        # print(dist)
+        # 3 - restrict the car pos
+        closest_point_x = pp_point_msg.poses[1].position.x
+        closest_point_y = pp_point_msg.poses[1].position.y
+        curr_point_x = pp_point_msg.poses[2].position.x
+        curr_point_y = pp_point_msg.poses[2].position.y
+        lateral_derivation = np.sqrt((closest_point_x - curr_point_x) ** 2 + (closest_point_y - curr_point_y) ** 2)
 
-        x = best_i_x * 0.6 + pp_point_x * 0.4
-        y = best_i_y * 0.6 + pp_point_y * 0.4
-
-        # if 0.3 < dist < 1.5:
-        #     x  = best_i_x
-        #     y  = best_i_y
+        # 4 - integrate pp point and gf raw point
+        if lateral_derivation > self.lateral_dist_thres:
+            print("deviation exceeded!")
+            x = lookahead_point_x * 2.0
+            y = lookahead_point_y * 0.5
+        else:
+            x = best_i_x * (1 - self.pp_ratio) + lookahead_point_x * self.pp_ratio
+            y = best_i_y * (1 - self.pp_ratio) + lookahead_point_y * self.pp_ratio
 
         # publish the new point
         self.pub_to_pp.publish(Point(x = float(x), y = float(y), z = 0.0))
@@ -109,11 +111,11 @@ class ReactiveFollowGap(Node):
         i = 0
         while i < len(proc_ranges) - 1:
             if proc_ranges[i + 1] - proc_ranges[i] >= self.extender_thres:
-                proc_ranges[i : min(i + self.bubble_radius + 1, len(proc_ranges))] = proc_ranges[i]
-                i += self.bubble_radius + 1
+                proc_ranges[i : min(i + self.extender_len + 1, len(proc_ranges))] = proc_ranges[i]
+                i += self.extender_len + 1
             elif proc_ranges[i] - proc_ranges[i + 1] >= self.extender_thres:
-                proc_ranges[max(0, i - self.bubble_radius + 1) : i + 1] = proc_ranges[i + 1]  # use shorter to extend
-                i += self.bubble_radius + 1
+                proc_ranges[max(0, i - self.extender_len + 1) : i + 1] = proc_ranges[i + 1]  # use shorter to extend
+                i += self.extender_len + 1
             else:
                 i += 1
 
