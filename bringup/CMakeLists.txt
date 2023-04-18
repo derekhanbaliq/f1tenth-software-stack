@@ -10,6 +10,7 @@ find_package(ament_cmake REQUIRED)
 
 install(PROGRAMS
   launch/sim_bringup_launch.py
+  launch/real_bringup_launch.py
   # DESTINATION lib/${PROJECT_NAME}
   DESTINATION share/${PROJECT_NAME}
 )

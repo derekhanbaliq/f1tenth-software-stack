@@ -22,10 +22,11 @@ class PurePursuit(Node):
     def __init__(self):
         super().__init__('pure_pursuit_node')
 
-        self.is_real = False
-        self.is_ascending = True  # waypoint indices are ascending during tracking
-        # self.map_name = 'levine_2nd'
-        self.map_name = 'skir_2_draw'
+        self.declare_params()
+
+        self.is_real = self.get_parameter("sim or real").value
+        self.is_ascending = self.get_parameter("is ascending").value  # waypoint indices are ascending during tracking
+        self.map_name = self.get_parameter("map name").value
 
         # Topics & Subs, Pubs
         drive_topic = '/drive'
@@ -54,15 +55,12 @@ class PurePursuit(Node):
         # visualization of gap following point
         self.vis_gf_point_pub = self.create_publisher(Marker, vis_gf_marker_topic, 1)
 
-        # Derek's path
-        #map_path = os.path.realpath(os.path.join('src', 'map_data'))
-        # Sofia's path
-        map_path = os.path.realpath(os.path.join('src', 'ESE-615-Final-Project', 'map_data'))
+        # loading waypoints
+        map_path = self.get_parameter("map path").value
         csv_data = np.loadtxt(map_path + '/' + self.map_name + '.csv', delimiter=';', skiprows=0)  # csv data
         self.waypoints = csv_data[:, 1:3]  # first row is indices
-        self.numWaypoints = self.waypoints.shape[0]
-        # self.ref_speed = csv_data[:, 5] * 0.6  # max speed for levine 2nd - real is 2m/s
-        self.ref_speed = csv_data[:, 5]  # max speed - sim is 10m/s
+        self.num_waypoints = self.waypoints.shape[0]
+        self.ref_speed = csv_data[:, 5] * float(self.get_parameter("reference speed gain").value) # max speed - sim is 10m/s, levine 2nd - real is 6m/s
 
         self.visualization_init()
 
@@ -71,13 +69,22 @@ class PurePursuit(Node):
         # self.steering_gain = 0.45
 
         # sim params
-        self.L = 1.0
-        self.steering_gain = 0.5
+        self.L = float(self.get_parameter("lookahead distance").value)
+        self.steering_gain = float(self.get_parameter("steering gain").value)
 
-        self.test_speed = 1.0
+        self.test_speed = float(self.get_parameter("test speed").value)
+
+    def declare_params(self):
+        self.declare_parameter("sim or real")
+        self.declare_parameter("is ascending")
+        self.declare_parameter("map name")
+        self.declare_parameter("map path")
+        self.declare_parameter("reference speed gain")
+        self.declare_parameter("lookahead distance")
+        self.declare_parameter("steering gain")
+        self.declare_parameter("test speed")
 
     def pose_callback(self, pose_msg):
-        
         # Get current pose
         self.currX = pose_msg.pose.position.x if self.is_real else pose_msg.pose.pose.position.x
         self.currY = pose_msg.pose.position.y if self.is_real else pose_msg.pose.pose.position.y
@@ -90,7 +97,7 @@ class PurePursuit(Node):
         self.rot = R.as_matrix()
 
         # Find closest waypoint to where we are
-        self.distances = distance.cdist(self.currPos, self.waypoints, 'euclidean').reshape((self.numWaypoints))
+        self.distances = distance.cdist(self.currPos, self.waypoints, 'euclidean').reshape((self.num_waypoints))
         self.closest_index = np.argmin(self.distances)
         self.closestPoint = self.waypoints[self.closest_index]
 
