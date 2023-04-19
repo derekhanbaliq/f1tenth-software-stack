@@ -16,6 +16,8 @@ class ReactiveFollowGap(Node):
     """
     def __init__(self):
         super().__init__('reactive_node')
+
+        self.declare_params()
         
         # Topics & Subs, Pubs
         lidar_scan_topic = '/scan'
@@ -40,19 +42,24 @@ class ReactiveFollowGap(Node):
         self.pub_vis_gap_fan = self.create_publisher(MarkerArray, vis_gap_fan_marker_topic, 1)
 
         # params
-        self.downsample_gap = 10
-        self.max_sight = 10.0
-        self.extender_len = 2
-        self.extender_thres = 0.5
-        self.max_gap_safe_dist = 1.5
-<<<<<<< HEAD
-        self.pp_ratio = 1.0
-=======
-        self.pp_ratio = 0.4
->>>>>>> c5d33298152a04c4509b8398d9bfeaaaf94f144f
-        self.lateral_dist_thres = 0.6  # lateral deviation constraint
+        self.downsample_gap = int(self.get_parameter("downsample gap").value)
+        self.max_sight = float(self.get_parameter("max sight").value)
+        self.extender_len = float(self.get_parameter("disparity extender length").value)
+        self.extender_thres = float(self.get_parameter("disparity extender threshold").value)
+        self.max_gap_safe_dist = float(self.get_parameter("safe distance of the max gap").value)
+        self.pp_ratio = float(self.get_parameter("pure pursuit confidence ratio").value)
+        self.lateral_dist_thres = float(self.get_parameter("lateral deviation threshold distance").value)  # lateral deviation constraint
 
         self.proc_ranges = np.zeros(72)
+
+    def declare_params(self):
+        self.declare_parameter("downsample gap")
+        self.declare_parameter("max sight")
+        self.declare_parameter("disparity extender length")
+        self.declare_parameter("disparity extender threshold")
+        self.declare_parameter("safe distance of the max gap")
+        self.declare_parameter("pure pursuit confidence ratio")
+        self.declare_parameter("lateral deviation threshold distance")
 
     def pure_pursuit_callback(self, pp_point_msg):
         # 1 - receive the lookahead point

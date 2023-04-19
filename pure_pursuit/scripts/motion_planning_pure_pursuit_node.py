@@ -65,10 +65,6 @@ class PurePursuit(Node):
 
         self.visualization_init()
 
-        # params for levine 2nd - real
-        # self.L = 2.2
-        # self.steering_gain = 0.45
-
         # sim params
         self.L = float(self.get_parameter("lookahead distance").value)
         self.steering_gain = float(self.get_parameter("steering gain").value)
@@ -155,7 +151,6 @@ class PurePursuit(Node):
         self.drive_msg.drive.steering_angle = gamma
         self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * self.ref_speed[self.closest_index]
         # self.drive_msg.drive.speed = self.test_speed
-        # print("Speed:", self.drive_msg.drive.speed)
         
         # publish drive message
         self.pub_drive.publish(self.drive_msg)

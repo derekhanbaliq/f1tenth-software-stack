@@ -26,11 +26,16 @@ def generate_launch_description():
     gap_follow_node = Node(
         package="gap_follow",
         executable="motion_planning_reactive_node.py",
-        # parameters=[
-        #     {"downsample_gap": 10},
-        #     {"max_sight": 10},
-        # ],
-        output="screen"
+        parameters=[
+            {"downsample gap": 10},
+            {"max sight": 10},
+            {"disparity extender length": 2},
+            {"disparity extender threshold": 0.5},
+            {"safe distance of the max gap": 1.5},
+            {"pure pursuit confidence ratio": 0.4},  # !!!!
+            {"lateral deviation threshold distance": 0.6},  # lateral deviation constraint
+        ],
+        # output="screen"
     )
 
     pure_pursuit_node = Node(
@@ -46,7 +51,7 @@ def generate_launch_description():
             {"steering gain": 0.5},
             {"test speed": 2.0},
         ],
-        # output="screen"
+        output="screen"
     )
     
     ld.add_action(gym_bridge_launch)
