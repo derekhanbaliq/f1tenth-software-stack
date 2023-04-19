@@ -14,34 +14,33 @@ def generate_launch_description():
 
     ld = LaunchDescription()
 
-    # remoter_bringup_launch = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(
-    #         [
-    #             os.path.join(get_package_share_directory('f1tenth_stack'), 'launch'), '/bringup_launch.py'
-    #         ]
-    #     )
-    # )
+    remoter_bringup_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [
+                os.path.join(get_package_share_directory('f1tenth_stack'), 'launch'), '/bringup_launch.py'
+            ]
+        )
+    )
 
-    # pf_launch = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(
-    #         [
-    #             os.path.join(get_package_share_directory('particle_filter'), 'launch'), '/localize_launch.py'
-    #         ]
-    #     )
-    # )
+    pf_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [
+                os.path.join(get_package_share_directory('particle_filter'), 'launch'), '/localize_launch.py'
+            ]
+        )
+    )
 
-    # rviz_node = Node(
-    #     package='rviz2',
-    #     executable='rviz2',
-    #     name='rviz',
-    #     arguments=['-d', os.path.join(get_package_share_directory('bringup'), 'launch', 'config.rviz')]
-    # )
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz',
+    )
     
-
     gap_follow_node = Node(
         package="gap_follow",
         executable="motion_planning_reactive_node.py",
         parameters=[
+            {"sim or real": real},
             {"downsample gap": 10},
             {"max sight": 10},
             {"disparity extender length": 2},
@@ -61,17 +60,17 @@ def generate_launch_description():
             {"is ascending": True},
             {"map name": "skir_2_draw"},
             {"map path": derek_map_path},
-            {"reference speed gain": 0.6},
+            {"reference speed gain": 0.6},  # power!
             {"lookahead distance": 2.2},
             {"steering gain": 0.45},
-            {"test speed": 2.0},
+            {"test speed": 1.0},
         ],
         # output="screen"
     )
     
-    # ld.add_action(remoter_bringup_launch)
-    # ld.add_action(pf_launch)
-    # ld.add_action(rviz_node)
+    ld.add_action(remoter_bringup_launch)
+    ld.add_action(pf_launch)
+    ld.add_action(rviz_node)
     ld.add_action(gap_follow_node)
     ld.add_action(pure_pursuit_node)
 

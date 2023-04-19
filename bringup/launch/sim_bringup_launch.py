@@ -27,6 +27,7 @@ def generate_launch_description():
         package="gap_follow",
         executable="motion_planning_reactive_node.py",
         parameters=[
+            {"sim or real": sim},
             {"downsample gap": 10},
             {"max sight": 10},
             {"disparity extender length": 2},
@@ -46,10 +47,10 @@ def generate_launch_description():
             {"is ascending": True},
             {"map name": "skir_2_draw"},
             {"map path": derek_map_path},
-            {"reference speed gain": 0.7},
+            {"reference speed gain": 0.7},  # power!
             {"lookahead distance": 1.0},
             {"steering gain": 0.5},
-            {"test speed": 2.0},
+            {"test speed": 1.0},
         ],
         output="screen"
     )

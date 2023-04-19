@@ -19,6 +19,8 @@ class ReactiveFollowGap(Node):
 
         self.declare_params()
         
+        self.is_real = self.get_parameter("sim or real").value
+        
         # Topics & Subs, Pubs
         lidar_scan_topic = '/scan'
         pp_point_topic = '/pp_point'
@@ -53,6 +55,7 @@ class ReactiveFollowGap(Node):
         self.proc_ranges = np.zeros(72)
 
     def declare_params(self):
+        self.declare_parameter("sim or real")
         self.declare_parameter("downsample gap")
         self.declare_parameter("max sight")
         self.declare_parameter("disparity extender length")
@@ -100,6 +103,8 @@ class ReactiveFollowGap(Node):
         else:
             x = best_i_x * (1 - self.pp_ratio) + lookahead_point_x * self.pp_ratio
             y = best_i_y * (1 - self.pp_ratio) + lookahead_point_y * self.pp_ratio
+            
+        print(self.is_real)
 
         # publish the new point
         self.pub_to_pp.publish(Point(x = float(x), y = float(y), z = 0.0))
@@ -205,7 +210,7 @@ class ReactiveFollowGap(Node):
 
         # yellow
         gf_point_marker = Marker()
-        gf_point_marker.header.frame_id = 'ego_racecar/base_link'  # if global then 'map'
+        gf_point_marker.header.frame_id = 'laser' if self.is_real else 'ego_racecar/base_link'  # if global then 'map'
         gf_point_marker.type = Marker.POINTS
         gf_point_marker.color.r = 0.75
         gf_point_marker.color.g = 0.75
@@ -228,7 +233,7 @@ class ReactiveFollowGap(Node):
         fan_start_y = -np.cos(fan_start_angle) * self.proc_ranges[start_max_gap]
 
         fan_start_point_marker = Marker()
-        fan_start_point_marker.header.frame_id = 'ego_racecar/base_link'  # if global then 'map'
+        fan_start_point_marker.header.frame_id = 'laser' if self.is_real else 'ego_racecar/base_link'  # if global then 'map'
         fan_start_point_marker.type = Marker.LINE_STRIP
         fan_start_point_marker.color.b = 0.75
         fan_start_point_marker.color.g = 0.75
@@ -247,7 +252,7 @@ class ReactiveFollowGap(Node):
         fan_end_y = -np.cos(fan_end_angle) * self.proc_ranges[end_max_gap]
 
         fan_end_point_marker = Marker()
-        fan_end_point_marker.header.frame_id = 'ego_racecar/base_link'  # if global then 'map'
+        fan_end_point_marker.header.frame_id = 'laser' if self.is_real else 'ego_racecar/base_link'  # if global then 'map'
         fan_end_point_marker.type = Marker.LINE_STRIP
         fan_end_point_marker.color.r = 0.
         fan_end_point_marker.color.g = 0.

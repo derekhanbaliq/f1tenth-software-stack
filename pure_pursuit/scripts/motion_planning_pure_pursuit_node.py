@@ -222,7 +222,7 @@ class PurePursuit(Node):
 
         # green
         self.gf_point_marker = Marker()
-        self.gf_point_marker.header.frame_id = 'ego_racecar/base_link'  # if global then 'map'
+        self.gf_point_marker.header.frame_id = 'laser' if self.is_real else 'ego_racecar/odom'
         self.gf_point_marker.type = Marker.POINTS
         self.gf_point_marker.color.g = 0.75
         self.gf_point_marker.color.a = 1.0
