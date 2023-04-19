@@ -42,10 +42,11 @@ class ReactiveFollowGap(Node):
         # params
         self.downsample_gap = 10
         self.max_sight = 10.0
-        self.bubble_radius = 2
+        self.extender_len = 2
         self.extender_thres = 0.5
         self.max_gap_safe_dist = 1.5
         self.pp_ratio = 0.4
+        self.lateral_dist_thres = 0.6  # lateral deviation constraint
 
         self.proc_ranges = np.zeros(72)
 
@@ -81,7 +82,7 @@ class ReactiveFollowGap(Node):
         lateral_derivation = np.sqrt((closest_point_x - curr_point_x) ** 2 + (closest_point_y - curr_point_y) ** 2)
 
         # 4 - integrate pp point and gf raw point
-        if lateral_derivation > 0.6:
+        if lateral_derivation > self.lateral_dist_thres:
             print("deviation exceeded!")
             x = lookahead_point_x * 2.0
             y = lookahead_point_y * 0.5
@@ -110,11 +111,11 @@ class ReactiveFollowGap(Node):
         i = 0
         while i < len(proc_ranges) - 1:
             if proc_ranges[i + 1] - proc_ranges[i] >= self.extender_thres:
-                proc_ranges[i : min(i + self.bubble_radius + 1, len(proc_ranges))] = proc_ranges[i]
-                i += self.bubble_radius + 1
+                proc_ranges[i : min(i + self.extender_len + 1, len(proc_ranges))] = proc_ranges[i]
+                i += self.extender_len + 1
             elif proc_ranges[i] - proc_ranges[i + 1] >= self.extender_thres:
-                proc_ranges[max(0, i - self.bubble_radius + 1) : i + 1] = proc_ranges[i + 1]  # use shorter to extend
-                i += self.bubble_radius + 1
+                proc_ranges[max(0, i - self.extender_len + 1) : i + 1] = proc_ranges[i + 1]  # use shorter to extend
+                i += self.extender_len + 1
             else:
                 i += 1
 
