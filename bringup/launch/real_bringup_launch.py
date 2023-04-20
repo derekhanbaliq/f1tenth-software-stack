@@ -63,7 +63,7 @@ def generate_launch_description():
         parameters=[
             {"sim or real": real},                          # do not change
             {"is ascending": True},                         # direction of waypoints (True for ccw)
-            {"csv name": "border07"},                      # csv for map used
+            {"csv name": "combined"},                      # csv for map used
             {"csv path": derek_csv_path},                   # path of csv for map in directory
             {"reference speed gain": 0.9},                  # weight of reference speed
             {"lookahead distance": 2.5},                    # lookahead of pure pursuit
