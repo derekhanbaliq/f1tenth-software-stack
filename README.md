@@ -16,3 +16,7 @@ sudo ufw disable  # disable the firewall
 rviz2  # on your native ubuntu and add the topics, start rviz2 before pf!
 ```
 
+<!-- Bringup Instructions:
+All parameter tuning should be done in launch -> real_bringup_launch.py or sim_bringup_launch.py. 
+Please open the relevant file for further settings.
+Open CMakeLists and switch between the commented out lines with the uncommented ones in install to determine which launch file will be used. -->
