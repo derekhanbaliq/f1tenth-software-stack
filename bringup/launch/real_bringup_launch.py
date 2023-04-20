@@ -49,7 +49,7 @@ def generate_launch_description():
             {"disparity extender length": 2},               # not used
             {"disparity extender threshold": 0.5},          # not used
             {"safe distance of the max gap": 1.5},          # minimum distance of consecutive free rays to create max gap
-            {"pure pursuit confidence ratio": 0.5},         # weight of pure pursuit versus gap follow
+            {"pure pursuit confidence ratio": 1.0},         # weight of pure pursuit versus gap follow
             {"lateral deviation threshold distance": 0.6},  # lateral deviation constraint (bubble)
             {"lookahead distance": 2.2},                    # lookahead of pure pursuit, keep gap following point has the same lookahead distance as the pure pursuit
         ],
@@ -63,11 +63,11 @@ def generate_launch_description():
         parameters=[
             {"sim or real": real},                          # do not change
             {"is ascending": True},                         # direction of waypoints (True for ccw)
-            {"csv name": "skir_2_draw"},                    # csv for map used
+            {"csv name": "border_half_meter"},              # csv for map used
             {"csv path": derek_csv_path},                   # path of csv for map in directory
-            {"reference speed gain": 0.6},                  # weight of reference speed
-            {"lookahead distance": 2.2},                    # lookahead of pure pursuit
-            {"steering gain": 0.45},                        # steering gain of pure pursuit
+            {"reference speed gain": 0.9},                  # weight of reference speed
+            {"lookahead distance": 2.5},                    # lookahead of pure pursuit
+            {"steering gain": 0.8},                         # steering gain of pure pursuit
             {"test speed": 1.0},                            # use for testing instead of reference speed
         ],
         # output="screen"                                   # comment in for visible prints from pure pursuit 
