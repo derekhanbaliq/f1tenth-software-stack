@@ -36,6 +36,7 @@ def generate_launch_description():
             {"safe distance of the max gap": 1.5},          # minimum distance of consecutive free rays to create max gap
             {"pure pursuit confidence ratio": 0.4},         # weight of pure pursuit versus gap follow
             {"lateral deviation threshold distance": 0.6},  # lateral deviation constraint (bubble)
+            {"lookahead distance": 2.2},                    # lookahead of pure pursuit, keep gap following point has the same lookahead distance as the pure pursuit
         ],
         # output="screen"                                   # comment in for visible prints from gap follow
     )
@@ -46,8 +47,8 @@ def generate_launch_description():
         parameters=[
             {"sim or real": sim},                           # do not change
             {"is ascending": True},                         # direction of waypoints (True for ccw)
-            {"map name": "skir_2_draw"},                    # map used
-            {"map path": derek_map_path},                   # path of map in directory
+            {"map name": "skir_2_draw"},                    # csv for map used
+            {"map path": derek_map_path},                   # path of csv for map in directory
             {"reference speed gain": 0.7},                  # weight of reference speed
             {"lookahead distance": 1.0},                    # lookahead of pure pursuit
             {"steering gain": 0.5},                         # steering gain of pure pursuit

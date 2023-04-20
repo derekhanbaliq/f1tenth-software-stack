@@ -51,6 +51,7 @@ class ReactiveFollowGap(Node):
         self.max_gap_safe_dist = float(self.get_parameter("safe distance of the max gap").value)
         self.pp_ratio = float(self.get_parameter("pure pursuit confidence ratio").value)
         self.lateral_dist_thres = float(self.get_parameter("lateral deviation threshold distance").value)  # lateral deviation constraint
+        self.L = float(self.get_parameter("lookahead distance").value)
 
         self.proc_ranges = np.zeros(72)
 
@@ -63,6 +64,7 @@ class ReactiveFollowGap(Node):
         self.declare_parameter("safe distance of the max gap")
         self.declare_parameter("pure pursuit confidence ratio")
         self.declare_parameter("lateral deviation threshold distance")
+        self.declare_parameter("lookahead distance")
 
     def pure_pursuit_callback(self, pp_point_msg):
         # 1 - receive the lookahead point
@@ -85,8 +87,8 @@ class ReactiveFollowGap(Node):
         self.vis_raw_gf_point(best_i)
         
         best_i_angle = np.deg2rad(180 / len(self.proc_ranges) * best_i)
-        best_i_x = np.sin(best_i_angle)
-        best_i_y = -np.cos(best_i_angle)
+        best_i_x = np.sin(best_i_angle) * self.L
+        best_i_y = -np.cos(best_i_angle) * self.L
 
         # 3 - restrict the car pos
         closest_point_x = pp_point_msg.poses[1].position.x
@@ -96,15 +98,21 @@ class ReactiveFollowGap(Node):
         lateral_derivation = np.sqrt((closest_point_x - curr_point_x) ** 2 + (closest_point_y - curr_point_y) ** 2)
 
         # 4 - integrate pp point and gf raw point
+        x = 0.
+        y = 0.
+        
         if lateral_derivation > self.lateral_dist_thres:
             print("deviation exceeded!")
-            x = lookahead_point_x * 2.0
-            y = lookahead_point_y * 0.5
+            x = lookahead_point_x
+            y = lookahead_point_y
         else:
             x = best_i_x * (1 - self.pp_ratio) + lookahead_point_x * self.pp_ratio
             y = best_i_y * (1 - self.pp_ratio) + lookahead_point_y * self.pp_ratio
-            
-        print(self.is_real)
+        
+        # pure pure pursuit
+        if self.pp_ratio == 1.0:
+            x = lookahead_point_x
+            y = lookahead_point_y
 
         # publish the new point
         self.pub_to_pp.publish(Point(x = float(x), y = float(y), z = 0.0))
@@ -205,8 +213,8 @@ class ReactiveFollowGap(Node):
 
     def vis_raw_gf_point(self, best_i):
         best_i_angle = np.deg2rad(180 / len(self.proc_ranges) * best_i)
-        best_i_x = np.sin(best_i_angle)
-        best_i_y = -np.cos(best_i_angle)
+        best_i_x = np.sin(best_i_angle) * self.L
+        best_i_y = -np.cos(best_i_angle) * self.L
 
         # yellow
         gf_point_marker = Marker()
