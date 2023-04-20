@@ -9,8 +9,8 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
     sim = False
-    derek_map_path = os.path.realpath(os.path.join('src', 'map_data'))
-    sofia_map_path = os.path.realpath(os.path.join('src', 'ESE-615-Final-Project', 'map_data'))
+    derek_csv_path = os.path.realpath(os.path.join('src', 'csv_data'))
+    sofia_csv_path = os.path.realpath(os.path.join('src', 'ESE-615-Final-Project', 'csv_data'))
 
     ld = LaunchDescription()
     
@@ -47,8 +47,8 @@ def generate_launch_description():
         parameters=[
             {"sim or real": sim},                           # do not change
             {"is ascending": True},                         # direction of waypoints (True for ccw)
-            {"map name": "skir_2_draw"},                    # csv for map used
-            {"map path": derek_map_path},                   # path of csv for map in directory
+            {"csv name": "skir_2_draw"},                    # csv for map used
+            {"csv path": derek_csv_path},                   # path of csv for map in directory
             {"reference speed gain": 0.7},                  # weight of reference speed
             {"lookahead distance": 1.0},                    # lookahead of pure pursuit
             {"steering gain": 0.5},                         # steering gain of pure pursuit

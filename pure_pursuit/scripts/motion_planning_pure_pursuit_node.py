@@ -26,7 +26,7 @@ class PurePursuit(Node):
 
         self.is_real = self.get_parameter("sim or real").value
         self.is_ascending = self.get_parameter("is ascending").value  # waypoint indices are ascending during tracking
-        self.map_name = self.get_parameter("map name").value
+        self.csv_name = self.get_parameter("csv name").value
 
         # Topics & Subs, Pubs
         drive_topic = '/drive'
@@ -57,8 +57,8 @@ class PurePursuit(Node):
         self.vis_gf_point_pub = self.create_publisher(Marker, vis_gf_marker_topic, 1)
 
         # loading waypoints
-        map_path = self.get_parameter("map path").value
-        csv_data = np.loadtxt(map_path + '/' + self.map_name + '.csv', delimiter=';', skiprows=0)  # csv data
+        csv_path = self.get_parameter("csv path").value
+        csv_data = np.loadtxt(csv_path + '/' + self.csv_name + '.csv', delimiter=';', skiprows=0)  # csv data
         self.waypoints = csv_data[:, 1:3]  # first row is indices
         self.num_waypoints = self.waypoints.shape[0]
         self.ref_speed = csv_data[:, 5] * float(self.get_parameter("reference speed gain").value) # max speed - sim is 10m/s, levine 2nd - real is 6m/s
@@ -73,8 +73,8 @@ class PurePursuit(Node):
     def declare_params(self):
         self.declare_parameter("sim or real")
         self.declare_parameter("is ascending")
-        self.declare_parameter("map name")
-        self.declare_parameter("map path")
+        self.declare_parameter("csv name")
+        self.declare_parameter("csv path")
         self.declare_parameter("reference speed gain")
         self.declare_parameter("lookahead distance")
         self.declare_parameter("steering gain")
