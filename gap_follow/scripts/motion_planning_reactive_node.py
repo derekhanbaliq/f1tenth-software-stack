@@ -52,8 +52,10 @@ class ReactiveFollowGap(Node):
         self.pp_ratio = float(self.get_parameter("pure pursuit confidence ratio").value)
         self.lateral_dist_thres = float(self.get_parameter("lateral deviation threshold distance").value)  # lateral deviation constraint
         self.L = float(self.get_parameter("lookahead distance").value)
+        self.obs_dist = float(self.get_parameter("obstacle distance").value)
 
         self.proc_ranges = np.zeros(72)
+        self.is_obstacle = 0
 
     def declare_params(self):
         self.declare_parameter("sim or real")
@@ -65,6 +67,7 @@ class ReactiveFollowGap(Node):
         self.declare_parameter("pure pursuit confidence ratio")
         self.declare_parameter("lateral deviation threshold distance")
         self.declare_parameter("lookahead distance")
+        self.declare_parameter("obstacle distance")
 
     def pure_pursuit_callback(self, pp_point_msg):
         # 1 - receive the lookahead point
@@ -72,47 +75,51 @@ class ReactiveFollowGap(Node):
         lookahead_point_y = pp_point_msg.poses[0].position.y
 
         # 2 - calculate raw gap following point
-        # find max length gap 
-        start_max_gap, end_max_gap = self.find_max_gap(self.proc_ranges)
-        # print('start_max_gap = ', start_max_gap)
-        # print('end_max_gap = ', end_max_gap)
-        start_max_gap = int(np.clip(start_max_gap, 0, len(self.proc_ranges) - 1))
-        end_max_gap = int(np.clip(end_max_gap, 0, len(self.proc_ranges) - 1))
-        self.vis_fan(start_max_gap, end_max_gap)
+        if self.is_obstacle == 1:
+            # find max length gap 
+            start_max_gap, end_max_gap = self.find_max_gap(self.proc_ranges)
+            # print('start_max_gap = ', start_max_gap)
+            # print('end_max_gap = ', end_max_gap)
+            start_max_gap = int(np.clip(start_max_gap, 0, len(self.proc_ranges) - 1))
+            end_max_gap = int(np.clip(end_max_gap, 0, len(self.proc_ranges) - 1))
+            self.vis_fan(start_max_gap, end_max_gap)
 
-        best_i = self.find_best_point(start_max_gap, end_max_gap, self.proc_ranges)
-        best_i = int(np.clip(best_i, 0, len(self.proc_ranges)))  # 0 ~ 71
-        # print('best point = ', best_i)
-        # print('best point range = ', self.proc_ranges[best_i])
-        self.vis_raw_gf_point(best_i)
+            best_i = self.find_best_point(start_max_gap, end_max_gap, self.proc_ranges)
+            best_i = int(np.clip(best_i, 0, len(self.proc_ranges)))  # 0 ~ 71
+            # print('best point = ', best_i)
+            # print('best point range = ', self.proc_ranges[best_i])
+            self.vis_raw_gf_point(best_i)
+            
+            best_i_angle = np.deg2rad(180 / len(self.proc_ranges) * best_i)
+            best_i_x = np.sin(best_i_angle) * self.L
+            best_i_y = -np.cos(best_i_angle) * self.L
+
+        # # 3 - restrict the car pos
+        # closest_waypoint_x = pp_point_msg.poses[1].position.x
+        # closest_waypoint_y = pp_point_msg.poses[1].position.y
+        # curr_point_x = pp_point_msg.poses[2].position.x
+        # curr_point_y = pp_point_msg.poses[2].position.y
+        # lateral_derivation = np.sqrt((closest_waypoint_x - curr_point_x) ** 2 + (closest_waypoint_y - curr_point_y) ** 2)
+
+        # # 4 - integrate pp point and gf raw point
+        # x = 0.
+        # y = 0.
         
-        best_i_angle = np.deg2rad(180 / len(self.proc_ranges) * best_i)
-        best_i_x = np.sin(best_i_angle) * self.L
-        best_i_y = -np.cos(best_i_angle) * self.L
-
-        # 3 - restrict the car pos
-        closest_point_x = pp_point_msg.poses[1].position.x
-        closest_point_y = pp_point_msg.poses[1].position.y
-        curr_point_x = pp_point_msg.poses[2].position.x
-        curr_point_y = pp_point_msg.poses[2].position.y
-        lateral_derivation = np.sqrt((closest_point_x - curr_point_x) ** 2 + (closest_point_y - curr_point_y) ** 2)
-
-        # 4 - integrate pp point and gf raw point
-        x = 0.
-        y = 0.
-        
-        if lateral_derivation > self.lateral_dist_thres:
-            print("deviation exceeded!")
-            x = lookahead_point_x
-            y = lookahead_point_y
-        else:
+        # if lateral_derivation > self.lateral_dist_thres:
+        #     print("deviation exceeded!")
+        #     x = lookahead_point_x
+        #     y = lookahead_point_y
+        # else:
             x = best_i_x * (1 - self.pp_ratio) + lookahead_point_x * self.pp_ratio
             y = best_i_y * (1 - self.pp_ratio) + lookahead_point_y * self.pp_ratio
-        
-        # pure pure pursuit
-        if self.pp_ratio == 1.0:
+        else:
             x = lookahead_point_x
             y = lookahead_point_y
+        
+        # # pure pure pursuit
+        # if self.pp_ratio == 1.0:
+        #     x = lookahead_point_x
+        #     y = lookahead_point_y
 
         # publish the new point
         self.pub_to_pp.publish(Point(x = float(x), y = float(y), z = 0.0))
@@ -144,6 +151,16 @@ class ReactiveFollowGap(Node):
                 i += 1
 
         return proc_ranges
+    
+    def obstacle_flag(self):
+        walls_offset = 1
+        closest_point = np.min(self.proc_ranges)
+        closest_point_index = np.argmin(self.proc_ranges)
+
+        if closest_point < self.obs_dist and closest_point_index < len(self.proc_ranges)-walls_offset and closest_point_index > walls_offset:
+            self.is_obstacle = 1
+        else:
+            self.is_obstacle = 0
 
     def find_max_gap(self, free_space_ranges):
         """ 
@@ -189,6 +206,8 @@ class ReactiveFollowGap(Node):
         ranges = np.array(data.ranges[180:899])
         self.proc_ranges = self.preprocess_lidar(ranges)
         # print("downsampling = ", self.proc_ranges)
+
+        self.obstacle_flag()
         
         # bubble up
         # proc_ranges = self.disparity_extender(proc_ranges)

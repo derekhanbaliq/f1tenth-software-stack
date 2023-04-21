@@ -36,7 +36,8 @@ def generate_launch_description():
             {"safe distance of the max gap": 1.5},          # minimum distance of consecutive free rays to create max gap
             {"pure pursuit confidence ratio": 0.4},         # weight of pure pursuit versus gap follow
             {"lateral deviation threshold distance": 0.6},  # lateral deviation constraint (bubble)
-            {"lookahead distance": 2.2},                    # lookahead of pure pursuit, keep gap following point has the same lookahead distance as the pure pursuit
+            {"lookahead distance": 2.5},                    # lookahead of pure pursuit, keep gap following point has the same lookahead distance as the pure pursuit
+            {"obstacle distance": 1.3},                     # how close the obstacle has to be to introduce gap follow to the waypoint calculation
         ],
         # output="screen"                                   # comment in for visible prints from gap follow
     )
@@ -47,11 +48,11 @@ def generate_launch_description():
         parameters=[
             {"sim or real": sim},                           # do not change
             {"is ascending": True},                         # direction of waypoints (True for ccw)
-            {"csv name": "skir_2_draw"},                    # csv for map used
+            {"csv name": "border_half_meter"},              # csv for map used, original - skir_2_draw
             {"csv path": derek_csv_path},                   # path of csv for map in directory
-            {"reference speed gain": 0.7},                  # weight of reference speed
-            {"lookahead distance": 1.0},                    # lookahead of pure pursuit
-            {"steering gain": 0.5},                         # steering gain of pure pursuit
+            {"reference speed gain": 0.9},                  # weight of reference speed, original - 0.7
+            {"lookahead distance": 2.5},                    # lookahead of pure pursuit, original - 1.0
+            {"steering gain": 0.8},                         # steering gain of pure pursuit, original - 0.5
             {"test speed": 1.0},                            # use for testing instead of reference speer
         ],
         output="screen"                                     # comment in for visible prints from pure pursuit           

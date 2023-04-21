@@ -51,11 +51,11 @@ def generate_launch_description():
             {"safe distance of the max gap": 1.5},          # minimum distance of consecutive free rays to create max gap
             {"pure pursuit confidence ratio": 1.0},         # weight of pure pursuit versus gap follow
             {"lateral deviation threshold distance": 0.6},  # lateral deviation constraint (bubble)
-            {"lookahead distance": 2.2},                    # lookahead of pure pursuit, keep gap following point has the same lookahead distance as the pure pursuit
+            {"lookahead distance": 2.5},                    # lookahead of pure pursuit, keep gap following point has the same lookahead distance as the pure pursuit
+            {"obstacle distance": 1.3},                     # how close the obstacle has to be to introduce gap follow to the waypoint calculation
         ],
         # output="screen"                                   # comment in for visible prints from gap follow
     )
-
 
     pure_pursuit_node = Node(
         package="pure_pursuit",
