@@ -140,6 +140,7 @@ class PurePursuit(Node):
     def gap_following_callback(self, gf_point_msg):
         gf_point_x = gf_point_msg.x
         gf_point_y = gf_point_msg.y
+        gf_point_obs = bool(gf_point_msg.z)
         # print(f'received gf point:',gf_point_msg.x, gf_point_msg.y)
 
         self.gf_point_marker.points = [Point(x = gf_point_x, y = gf_point_y, z = 0.2)]
@@ -149,7 +150,9 @@ class PurePursuit(Node):
         gamma = self.steering_gain * (2 * gf_point_y / self.L**2)
         gamma = np.clip(gamma, -0.35, 0.35)
         self.drive_msg.drive.steering_angle = gamma
-        self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * self.ref_speed[self.closest_index]
+        speed = (-1.0 if self.is_real else 1.0) * self.ref_speed[self.closest_index]
+        #self.drive_msg.drive.speed = (0.2 if gf_point_obs else 1.0) * speed
+        self.drive_msg.drive.speed = speed
         # self.drive_msg.drive.speed = self.test_speed
         
         # publish drive message

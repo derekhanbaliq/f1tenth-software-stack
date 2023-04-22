@@ -122,7 +122,7 @@ class ReactiveFollowGap(Node):
         #     y = lookahead_point_y
 
         # publish the new point
-        self.pub_to_pp.publish(Point(x = float(x), y = float(y), z = 0.0))
+        self.pub_to_pp.publish(Point(x = float(x), y = float(y), z = float(self.is_obstacle)))
 
     def preprocess_lidar(self, ranges):
         """ 
