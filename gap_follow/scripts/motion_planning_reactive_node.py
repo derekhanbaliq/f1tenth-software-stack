@@ -153,7 +153,7 @@ class ReactiveFollowGap(Node):
         return proc_ranges
     
     def obstacle_flag(self):
-        walls_offset = 1
+        walls_offset = 2
         closest_point = np.min(self.proc_ranges)
         closest_point_index = np.argmin(self.proc_ranges)
 
