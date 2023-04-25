@@ -10,8 +10,9 @@ find_package(ament_cmake REQUIRED)
 
 install(PROGRAMS
   launch/sim_bringup_launch.py
-  # launch/real_bringup_launch.py
-  # DESTINATION lib/${PROJECT_NAME}
+  launch/real_bringup_launch.py
+  launch/levine_sim_launch.py
+  launch/levine_real_launch.py
   DESTINATION share/${PROJECT_NAME}
 )
 

@@ -102,7 +102,7 @@ class MPC(Node):
         self.vis_pred_path_pub = self.create_publisher(Marker, vis_pred_path_topic, 1)
         self.vis_pred_path_msg = Marker()
 
-        map_path = os.path.abspath(os.path.join('src', 'map_data'))
+        map_path = os.path.abspath(os.path.join('src', 'csv_data'))
         self.waypoints = np.loadtxt(map_path + '/' + self.map_name + '.csv', delimiter=';', skiprows=0)  # csv data
         if self.map_name == 'levine_2nd':
             self.waypoints[:, 3] += math.pi / 2
@@ -125,18 +125,18 @@ class MPC(Node):
         # extract pose from ROS msg
         self.update_rotation_matrix(pose_msg)
         vehicle_state = self.update_vehicle_state(pose_msg)
-        
-        if self.is_real:
-            vehicle_state.v = -1 * vehicle_state.v  # negate the monitoring speed 
 
-        # Calculate the next reference trajectory for the next T steps with current vehicle pose.
+        if self.is_real:
+            vehicle_state.v = -1 * vehicle_state.v  # negate the monitoring speed
+
+        # TODO: Calculate the next reference trajectory for the next T steps with current vehicle pose.
         # ref_x, ref_y, ref_yaw, ref_v are columns of self.waypoints
-        ref_path = self.calc_ref_trajectory(vehicle_state, self.waypoints[:, 1], self.waypoints[:, 2], self.waypoints[:, 3], 0.5*self.waypoints[:, 5])
+        ref_path = self.calc_ref_trajectory(vehicle_state, self.waypoints[:, 1], self.waypoints[:, 2], self.waypoints[:, 3], self.waypoints[:, 5])
         # print(ref_path)
         self.visualize_ref_traj_in_rviz(ref_path)
         
         x0 = [vehicle_state.x, vehicle_state.y, vehicle_state.v, vehicle_state.yaw]
-        print("Vehicle state", vehicle_state.v)
+        # print(vehicle_state.v)
 
         # solve the MPC control problem
         (
@@ -152,11 +152,13 @@ class MPC(Node):
         # publish drive message.
         steer_output = self.odelta_v[0]
         speed_output = vehicle_state.v + self.oa[0] * self.config.DTK
-        print("speed output:", round(speed_output, 2))
 
         self.drive_msg.drive.steering_angle = steer_output
         self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * speed_output
         self.drive_pub.publish(self.drive_msg)
+        print("steering ={}, speed ={}".format(self.drive_msg.drive.steering_angle, self.drive_msg.drive.speed))
+
+        self.vis_waypoints_pub.publish(self.vis_waypoints_msg)
 
     # toolkits
     def update_rotation_matrix(self, pose_msg):
@@ -226,7 +228,7 @@ class MPC(Node):
         # The FTOCP has the horizon of T timesteps
 
         # --------------------------------------------------------
-        # fill in the objectives here, you should be using cvxpy.quad_form() somehwhere
+        # TODO: fill in the objectives here, you should be using cvxpy.quad_form() somehwhere
         
         # Objective part 1: Influence of the control inputs: Inputs u multiplied by the penalty R
         objective += cvxpy.quad_form(cvxpy.vec(self.uk), R_block)  # # cvxpy.vec() - Flattens the matrix X into a vector in column-major order
@@ -551,8 +553,6 @@ class MPC(Node):
         mpc_a, mpc_delta, mpc_x, mpc_y, mpc_yaw, mpc_v = self.mpc_prob_solve(
             ref_path, path_predict, x0
         )
-        
-        print("mpc_v =", mpc_v)
 
         return mpc_a, mpc_delta, mpc_x, mpc_y, mpc_yaw, mpc_v, path_predict
 
@@ -570,7 +570,7 @@ class MPC(Node):
             point = Point(x = self.waypoints[i, 1], y = self.waypoints[i, 2], z = 0.1)
             self.vis_waypoints_msg.points.append(point)
         
-        self.vis_waypoints_pub.publish(self.vis_waypoints_msg)
+        # self.vis_waypoints_pub.publish(self.vis_waypoints_msg)
 
     def visualize_ref_traj_in_rviz(self, ref_traj):
         # visualize the path data in the world frame

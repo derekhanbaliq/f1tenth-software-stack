@@ -150,7 +150,7 @@ class LQR(Node):
         self.markerArray = MarkerArray()
 
         # load waypoints
-        map_path = os.path.abspath(os.path.join('src', 'map_data'))
+        map_path = os.path.abspath(os.path.join('src', 'csv_data'))
         csv_data = np.loadtxt(map_path + '/' + self.map_name + '.csv', delimiter=';', skiprows=0)  # csv data
         self.waypoints = Waypoint(self.map_name, self.is_real, self.is_ascending, csv_data)
 
