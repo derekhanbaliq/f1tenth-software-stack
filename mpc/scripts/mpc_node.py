@@ -37,11 +37,11 @@ class mpc_config:
     )  # input difference cost matrix, penalty for change of inputs - [accel, steering_speed]
     Qk: list = field(
         # default_factory=lambda: np.diag([13.5, 13.5, 5.5, 13.0])
-        default_factory=lambda: np.diag([13.5, 13.5, 5.5, 13.0])
+        default_factory=lambda: np.diag([50., 50., 5.5, 13.0])
     )  # state error cost matrix, for the the next (T) prediction time steps [x, y, delta, v, yaw, yaw-rate, beta]
     Qfk: list = field(
         # default_factory=lambda: np.diag([13.5, 13.5, 5.5, 13.0])
-        default_factory=lambda: np.diag([13.5, 13.5, 5.5, 13.0])
+        default_factory=lambda: np.diag([50., 50., 5.5, 13.0])
     )  # final state error matrix, penalty  for the final state constraints: [x, y, delta, v, yaw, yaw-rate, beta]
     # ---------------------------------------------------
 
@@ -55,7 +55,7 @@ class mpc_config:
     MAX_STEER: float = 0.4189  # maximum steering angle [rad]
     MAX_DSTEER: float = np.deg2rad(180.0)  # maximum steering speed [rad/s]
     MAX_STEER_V: float = 3.2  # maximum steering speed [rad/s]
-    MAX_SPEED: float = 1.0  # maximum speed [m/s]
+    MAX_SPEED: float = 3.0  # maximum speed [m/s]
     MIN_SPEED: float = 0.0  # minimum backward speed [m/s]
     MAX_ACCEL: float = 3.0  # maximum acceleration [m/ss]
 
