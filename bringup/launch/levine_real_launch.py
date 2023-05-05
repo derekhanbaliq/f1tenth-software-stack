@@ -57,8 +57,8 @@ def generate_launch_description():
     ld.add_action(pf_launch)
     ld.add_action(rviz_node)
     # ld.add_action(pure_pursuit_node)
-    ld.add_action(lqr_node)
-    # ld.add_action(mpc_node)
+    # ld.add_action(lqr_node)
+    ld.add_action(mpc_node)
 
     return ld
     

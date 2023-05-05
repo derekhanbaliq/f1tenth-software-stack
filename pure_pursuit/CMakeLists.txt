@@ -56,7 +56,6 @@ ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
   scripts/pure_pursuit_node.py
-  scripts/speed_point_pure_pursuit_node.py
   scripts/motion_planning_pure_pursuit_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
