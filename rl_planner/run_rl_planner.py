@@ -5,15 +5,61 @@ from ackermann_msgs.msg import AckermannDriveStamped
 from scipy.spatial import distance, transform
 import os
 
+
 import numpy as np
 from math import pi, atan2, cos, sin
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point, PointStamped, QuaternionStamped, TransformStamped, PoseStamped
 
+import torch
+from torch import nn
+from torch.distributions.normal import Normal
+
+NUM_LIDAR_SCANS = 720//10
+
+def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
+    torch.nn.init.orthogonal_(layer.weight, std)
+    torch.nn.init.constant_(layer.bias, bias_const)
+    return layer
+
+class Agent(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.critic = nn.Sequential(
+            layer_init(nn.Linear(in_channels, 64)),
+            nn.Tanh(),
+            layer_init(nn.Linear(64, 64)),
+            nn.Tanh(),
+            layer_init(nn.Linear(64, 1), std=1.0),
+        )
+        self.actor_mean = nn.Sequential(
+            layer_init(nn.Linear(in_channels, 64)),
+            nn.Tanh(),
+            layer_init(nn.Linear(64, 64)),
+            nn.Tanh(),
+            layer_init(nn.Linear(64, out_channels), std=0.01),
+        )
+        self.actor_logstd = nn.Parameter(torch.zeros(1, out_channels))
+
+    def get_value(self, x):
+        return self.critic(x)
+
+    def get_action_and_value(self, x, action=None):
+        action_mean = self.actor_mean(x)
+        action_logstd = self.actor_logstd.expand_as(action_mean)
+        action_std = torch.exp(action_logstd)
+        probs = Normal(action_mean, action_std)
+        if action is None:
+            action = probs.sample()
+        return action, probs.log_prob(action).sum(1), probs.entropy().sum(1), self.critic(x)
+
+
 
 class RLPlanner(Node):
     def __init__(self):
         super().__init__('RlPlanner')
+
+        self.T = 1
 
         # Topics & Subs, Pubs
         lidarscan_topic = '/scan'
@@ -32,7 +78,7 @@ class RLPlanner(Node):
         csv_data = np.loadtxt(map_path + '/' + self.map_name + '.csv', delimiter=';', skiprows=0)  # csv data
         self.waypoints = csv_data[:, 1:3]  # first row is indices
         self.numWaypoints = self.waypoints.shape[0]
-        self.ref_speed = csv_data[:, 5]
+        self.ref_speed = 1.0 * np.ones_like(csv_data[:, 5])
 
         # params for levine 2nd - real
         self.L = 2.2
@@ -49,7 +95,13 @@ class RLPlanner(Node):
         self.drive_publisher.publish(self.ackermann_msg)
         self.scan_subscriber = self.create_subscription(LaserScan, lidarscan_topic, self.scan_callback, 10)
 
-        # import the model we trained
+        # import the model we trained(""
+        
+        self.agent = Agent(NUM_LIDAR_SCANS, self.T)
+        model_path = "ppo_with_noise/noise_reward_370.pt"
+        # model_path = "33_model.pt"
+        model = torch.load(model_path)
+        self.agent.load_state_dict(model["model_state_dict"])
     
     # PURE PURSUIT
     def pose_callback(self, pose_msg):
@@ -62,8 +114,8 @@ class RLPlanner(Node):
 
         # Transform quaternion pose message to rotation matrix
         quat = pose_msg.pose.orientation
-        quat = [quat.x, quat.y, quat.z, quat.w]
-        R = transform.Rotation.from_quat(quat)
+        self.quat = [quat.x, quat.y, quat.z, quat.w]
+        R = transform.Rotation.from_quat(self.quat)
         self.rot = R.as_matrix()
 
         # Find closest waypoint to where we are
@@ -72,10 +124,10 @@ class RLPlanner(Node):
         self.closestPoint = self.waypoints[self.closest_index]
 
         # Find target point
-        targetPoint = self.get_closest_point_beyond_lookahead_dist(self.L)
+        self.targetPoint, self.targetPointIdx = self.get_closest_point_beyond_lookahead_dist(self.L)
 
         # Homogeneous transformation
-        translatedTargetPoint = self.translatePoint(targetPoint)
+        translatedTargetPoint = self.translatePoint(self.targetPoint)
         
         # calculate curvature/steering angle
         y = translatedTargetPoint[1]
@@ -100,7 +152,7 @@ class RLPlanner(Node):
 
         point = self.waypoints[point_index]
 
-        return point
+        return point, point_index
 
     def translatePoint(self, targetPoint):
         H = np.zeros((4, 4))
@@ -116,17 +168,66 @@ class RLPlanner(Node):
     # RL PLANNER
     def scan_callback(self, scan_msg):
         scans = np.array(scan_msg.ranges[:-1]).flatten()
-        # obs = np.concatenate((self.currPos, scans, self.waypoints))
+        print(scans.shape)
 
+        def get_heading_from_quaternion(q):
+            qx, qy, qz, qw = q
+            # roll = np.arctan2(2.0 * (qz * qy + qw * qx), 1.0 - 2.0 * (qx * qx + qy * qy))
+            # pitch = np.arcsin(2.0 * (qy * qw - qz * qx))
+            heading = np.arctan2(2.0 * (qz * qw + qx * qy), -1.0 + 2.0 * (qw * qw + qx * qx))
+            return heading # np.array([heading]).reshape(-1, 1)
+
+        # target_points = []
+        # for i in range(self.T):
+        #     if i == 0:
+        #         target_points.append(self.targetPoint.reshape(-1, 1))
+        #     else:
+        #         wp = self.waypoints[(self.targetPointIdx + i) % self.waypoints.shape[0]]
+        #         # obs[start_idx:end_idx, :] = wp.reshape(-1, 1)
+        #         target_points.append(wp.reshape(-1, 1))
+        # target_points = np.concatenate(target_points)
+        heading = get_heading_from_quaternion(self.quat)
+        # pos = np.array([self.currPos[:, 0].item(), self.currPos[:, 1].item(), heading])
+        # obs = np.concatenate((pos.reshape(-1, 1), scans.reshape(-1, 1), target_points))
+        
+        scans = scans[180:900]
+        scans = scans[::10]
+        # scans = np.clip(scans, 0, 30)
+        
+
+        obs = torch.from_numpy(scans).float()
+        obs = obs.reshape(1, -1)
         # print(type(scans))
-        # action, _, _, _ = self.agent.get_action_and_value(obs)
+        action, _, _, _ = self.agent.get_action_and_value(obs)
+        print(f"action {action}")
+        action = action.numpy()
 
         # do our code here
+        # if isinstance(offset, np.ndarray):  # agent == 1:
+        R = lambda theta: np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+        axis = np.array([0, 1]).reshape(-1, 1)
+        rotated_offset = R(heading) @ axis * action[0]
+        # import ipdb; ipdb.set_trace()
 
-        self.ackermann_msg.drive.speed = 1.0
-        self.ackermann_msg.drive.steering_angle = 0.0
-        print("steering =", self.ackermann_msg.drive.speed)
-        print("speed =", self.ackermann_msg.drive.steering_angle)
+        targetPoint = self.targetPoint + rotated_offset[:, 0]  # += is not overwritten by np!
+
+        # calculate steering angle / curvature
+        waypoint_y = np.dot(np.array([np.sin(-heading), np.cos(-heading)]),
+                            targetPoint - np.array([self.currX, self.currY]))
+        gamma = self.steering_gain * 2.0 * waypoint_y / self.L ** 2
+        steering_angle = gamma
+        # radius = 1 / (2.0 * waypoint_y / self.L ** 2)
+        # steering_angle = np.arctan(0.33 / radius)  # Billy's method, but it also involves tricky fixing
+        steering_angle = np.clip(steering_angle, -0.35, 0.35)
+
+        # calculate speed
+        speed = self.ref_speed[self.targetPointIdx]
+
+
+        self.ackermann_msg.drive.speed = -1 * speed # special car :-)
+        self.ackermann_msg.drive.steering_angle = steering_angle
+        print("steering =", self.ackermann_msg.drive.steering_angle)
+        print("speed =", self.ackermann_msg.drive.speed)
 
         self.drive_publisher.publish(self.ackermann_msg)
 
