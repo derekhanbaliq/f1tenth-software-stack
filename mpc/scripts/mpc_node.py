@@ -36,12 +36,12 @@ class mpc_config:
         default_factory=lambda: np.diag([0.01, 100.0])
     )  # input difference cost matrix, penalty for change of inputs - [accel, steering_speed]
     Qk: list = field(
-        # default_factory=lambda: np.diag([13.5, 13.5, 5.5, 13.0])
-        default_factory=lambda: np.diag([50., 50., 5.5, 13.0])
+        default_factory=lambda: np.diag([13.5, 13.5, 5.5, 13.0])  # levine sim
+        # default_factory=lambda: np.diag([50., 50., 5.5, 13.0])
     )  # state error cost matrix, for the the next (T) prediction time steps [x, y, delta, v, yaw, yaw-rate, beta]
     Qfk: list = field(
-        # default_factory=lambda: np.diag([13.5, 13.5, 5.5, 13.0])
-        default_factory=lambda: np.diag([50., 50., 5.5, 13.0])
+        default_factory=lambda: np.diag([13.5, 13.5, 5.5, 13.0])  # levine sim
+        # default_factory=lambda: np.diag([50., 50., 5.5, 13.0])
     )  # final state error matrix, penalty  for the final state constraints: [x, y, delta, v, yaw, yaw-rate, beta]
     # ---------------------------------------------------
 
@@ -55,7 +55,7 @@ class mpc_config:
     MAX_STEER: float = 0.4189  # maximum steering angle [rad]
     MAX_DSTEER: float = np.deg2rad(180.0)  # maximum steering speed [rad/s]
     MAX_STEER_V: float = 3.2  # maximum steering speed [rad/s]
-    MAX_SPEED: float = 3.0  # maximum speed [m/s]
+    MAX_SPEED: float = 5.0  # maximum speed [m/s] ~ 5.0 for levine sim
     MIN_SPEED: float = 0.0  # minimum backward speed [m/s]
     MAX_ACCEL: float = 3.0  # maximum acceleration [m/ss]
 
@@ -79,7 +79,7 @@ class MPC(Node):
     def __init__(self):
         super().__init__('mpc_node')
         # use the MPC as a tracker (similar to pure pursuit)
-        self.is_real = True
+        self.is_real = False
         self.map_name = 'levine_2nd'
 
         # create ROS subscribers and publishers

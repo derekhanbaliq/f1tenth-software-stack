@@ -151,8 +151,8 @@ class PurePursuit(Node):
         gamma = np.clip(gamma, -0.35, 0.35)
         self.drive_msg.drive.steering_angle = gamma
         speed = (-1.0 if self.is_real else 1.0) * self.ref_speed[self.closest_index]
-        self.drive_msg.drive.speed = (0.2 if gf_point_obs else 1.0) * speed
-        # self.drive_msg.drive.speed = speed
+        # self.drive_msg.drive.speed = (0.2 if gf_point_obs else 1.0) * speed  # if allows braking for close obstacles
+        self.drive_msg.drive.speed = speed
         # self.drive_msg.drive.speed = self.test_speed
         
         # publish drive message

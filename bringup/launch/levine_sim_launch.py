@@ -39,8 +39,8 @@ def generate_launch_description():
     )
     
     ld.add_action(gym_bridge_launch)
-    # ld.add_action(pure_pursuit_node)
-    ld.add_action(lqr_node)
+    ld.add_action(pure_pursuit_node)
+    # ld.add_action(lqr_node)
     # ld.add_action(mpc_node)
 
     return ld

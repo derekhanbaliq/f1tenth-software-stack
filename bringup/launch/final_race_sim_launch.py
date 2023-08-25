@@ -10,7 +10,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 def generate_launch_description():
     sim = False
     derek_csv_path = os.path.realpath(os.path.join('src', 'csv_data'))
-    sofia_csv_path = os.path.realpath(os.path.join('src', 'ESE-615-Final-Project', 'csv_data'))
+    # sofia_csv_path = os.path.realpath(os.path.join('src', 'ESE-615-Final-Project', 'csv_data'))
 
     ld = LaunchDescription()
     
@@ -50,7 +50,7 @@ def generate_launch_description():
             {"is ascending": True},                         # direction of waypoints (True for ccw)
             {"csv name": "0420_best"},              # csv for map used, original - skir_2_draw
             {"csv path": derek_csv_path},                   # path of csv for map in directory
-            {"reference speed gain": 0.7},                  # weight of reference speed, original - 0.7
+            {"reference speed gain": 0.5},                  # weight of reference speed, original - 0.7
             {"lookahead distance": 1.0},                    # lookahead of pure pursuit, original - 1.0
             {"steering gain": 0.45},                         # steering gain of pure pursuit, original - 0.5
             {"test speed": 1.0},                            # use for testing instead of reference speer

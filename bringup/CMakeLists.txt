@@ -9,8 +9,8 @@ endif()
 find_package(ament_cmake REQUIRED)
 
 install(PROGRAMS
-  launch/sim_bringup_launch.py
-  launch/real_bringup_launch.py
+  launch/final_race_sim_launch.py
+  launch/final_race_real_launch.py
   launch/levine_sim_launch.py
   launch/levine_real_launch.py
   DESTINATION share/${PROJECT_NAME}

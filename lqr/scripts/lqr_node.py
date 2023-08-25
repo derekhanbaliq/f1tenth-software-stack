@@ -27,7 +27,7 @@ class Waypoint:
         self.x = csv_data[:, 1]
         self.y = csv_data[:, 2]
         if is_real:
-            self.v = csv_data[:, 5] * 0.5
+            self.v = csv_data[:, 5] * 0.5  # use 0 ~ 5 m/s speed for real condition
         else:
             self.v = csv_data[:, 5]
         if map_name == 'levine_2nd':
@@ -127,7 +127,7 @@ class LQR(Node):
     def __init__(self):
         super().__init__('lqr_node')
 
-        self.is_real = True
+        self.is_real = False
         self.is_ascending = True  # waypoint indices are ascending during tracking
         self.map_name = 'levine_2nd'
 
