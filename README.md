@@ -2,9 +2,46 @@
 
 F1TENTH software stack is the integrated repository of ESE 615 Team 6 of Spring 2023.
 
+## Run Lab 1 Package
+```bash
+cd ~/sim_ws
+colcon build --packages-select lab1_pkg
+source /opt/ros/foxy/setup.bash
+. install/setup.bash
+ros2 launch lab1_pkg lab1_launch.py
+```
+
+## Run AEB in Sim
+
+Run the following commands in 3 terminals
+```bash
+ros2 launch f1tenth_gym_ros gym_bridge_launch.py
+ros2 run safety_node safety_node.py
+ros2 run teleop_twist_keyboard teleop_twist_keyboard
+```
+and control the keyboard.
+
+## Run Wall Following in Sim
+
+Run the following commands in 2 terminals
+
+```bash
+ros2 launch f1tenth_gym_ros gym_bridge_launch.py
+ros2 run wall_follow wall_follow_node.py
+```
+
+## Run Gap Following in Sim
+
+Run the following commands in 2 terminals
+
+```bash
+ros2 launch f1tenth_gym_ros gym_bridge_launch.py
+ros2 run gap_follow reactive_node.py
+```
+
 ## Run Pure Pursuit, LQR, and MPC in Sim
 
-Modify sim.yaml of f1tenth_gym_ros to load the levine 2nd floor map, by commenting other config and adding
+Modify sim.yaml to load the levine 2nd floor map by using
 ```yaml
 map_path: '/home/derek/sim_ws/src/f1tenth_gym_ros/maps/levine_2nd'
 map_img_ext: '.pgm'
@@ -38,7 +75,7 @@ MAX_SPEED: float = 5.0  # maximum speed [m/s] ~ 5.0 for levine sim
 ```
 All the other parameters remain the same. 
 
-Go to levine_sim_launch.py, comment and uncomment the desired pure pursuit / LQR / MPC corresponding code to finish the config. 
+Go to levine_sim_launch.py, comment & uncomment the desired pure pursuit / LQR / MPC corresponding code to finish the config. 
 
 Go to terminal, run following command
 ```bash
@@ -50,7 +87,7 @@ And the corresponding path tracking algorithm will execute.
 
 ## Run Final Race (Gap Following + Pure Pursuit) in Sim
 
-Modify sim.yaml of f1tenth_gym_ros to load the clear Skirkanich map, by commenting other config and adding
+Modify sim.yaml of f1tenth_gym_ros to load the clear Skirkanich map by using
 
 ```yaml
 map_path: '/home/derek/sim_ws/src/f1tenth_gym_ros/maps/skir_2_draw'

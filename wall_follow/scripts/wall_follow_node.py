@@ -139,7 +139,7 @@ class WallFollow(Node):
         
         error = self.get_error(np.array(scan_msg.ranges), 0.8) # TODO: replace with error calculated by get_error()
         
-        # TODO: calculate desired car velocity based on error
+        # TODO: calculate desired car velocity based on heading angle
         if abs(self.alpha) <= np.pi / 18:
             velocity = 1.5
         elif abs(self.alpha) <= np.pi / 9:
