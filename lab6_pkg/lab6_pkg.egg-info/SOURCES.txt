@@ -1,0 +1,11 @@
+package.xml
+setup.cfg
+setup.py
+lab6_pkg/__init__.py
+lab6_pkg.egg-info/PKG-INFO
+lab6_pkg.egg-info/SOURCES.txt
+lab6_pkg.egg-info/dependency_links.txt
+lab6_pkg.egg-info/entry_points.txt
+lab6_pkg.egg-info/requires.txt
+lab6_pkg.egg-info/top_level.txt
+lab6_pkg.egg-info/zip-safe

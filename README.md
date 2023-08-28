@@ -85,6 +85,22 @@ ros2 launch bringup levine_sim_launch.py
 ```
 And the corresponding path tracking algorithm will execute.
 
+## Run Motion Planning (RRT* + Pure Pursuit) in Sim
+
+Copy the "slam_maps" folder in "lab6_pkg" folder to "maps" folder of "f1tenth_gym_ros" folder and rename it as "motion_planning". Modify sim.yaml to load the levine 2nd floor map for lab 6 config by using
+```yaml
+map_path: '/home/derek/sim_ws/src/f1tenth_gym_ros/maps/motion_planning/levine_2nd'
+map_img_ext: '.pgm'
+```
+
+Run the following commands in 3 terminals
+```bash
+ros2 launch f1tenth_gym_ros gym_bridge_launch.py
+ros2 run lab6_pkg rrt_node.py
+ros2 run lab6_pkg motion_planning_pure_pursuit_node.py
+```
+And the RRT* + pure pursuit will execute.
+
 ## Run Final Race (Gap Following + Pure Pursuit) in Sim
 
 Modify sim.yaml of f1tenth_gym_ros to load the clear Skirkanich map by using
@@ -96,7 +112,7 @@ map_img_ext: '.pgm'
 
 To load the Skirkanich map with random obstacles, change the map name as **skir_2_draw_obs**.
 
-Make sure we are using the normal speed by checking code is commented in motion_planning_pure_pursuit_node.py as following
+Make sure we are using the normal speed by checking code is commented in final_race_pure_pursuit_node.py as following
 
 ```python
 # self.drive_msg.drive.speed = (0.2 if gf_point_obs else 1.0) * speed  # if allows braking for close obstacles

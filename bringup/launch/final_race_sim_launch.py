@@ -26,7 +26,7 @@ def generate_launch_description():
 
     gap_follow_node = Node(
         package="gap_follow",
-        executable="motion_planning_reactive_node.py",
+        executable="final_race_reactive_node.py",
         parameters=[
             {"sim or real": sim},                           # do not change
             {"downsample gap": 10},                         # downsampling lidar values
@@ -44,7 +44,7 @@ def generate_launch_description():
 
     pure_pursuit_node = Node(
         package="pure_pursuit",
-        executable="motion_planning_pure_pursuit_node.py",
+        executable="final_race_pure_pursuit_node.py",
         parameters=[
             {"sim or real": sim},                           # do not change
             {"is ascending": True},                         # direction of waypoints (True for ccw)

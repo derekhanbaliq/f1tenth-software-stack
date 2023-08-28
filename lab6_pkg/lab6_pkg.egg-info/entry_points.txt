@@ -1,0 +1,3 @@
+[console_scripts]
+rrt_node = lab6_pkg.rrt_node:main
+

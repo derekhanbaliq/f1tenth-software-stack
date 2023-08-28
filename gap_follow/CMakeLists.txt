@@ -46,7 +46,7 @@ ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
   scripts/reactive_node.py
-  scripts/motion_planning_reactive_node.py
+  scripts/final_race_reactive_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

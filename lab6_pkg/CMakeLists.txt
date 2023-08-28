@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(pure_pursuit)
+project(lab6_pkg)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -23,40 +23,38 @@ foreach(PACKAGE
   std_msgs
   visualization_msgs
   Eigen3
-  tf2_ros
-  nav_msgs)
+  tf2_ros)
 
   find_package(${PACKAGE} REQUIRED)
 
 endforeach()
 
 # Include Cpp "include" directory
-include_directories(include)
-include_directories(
-  ${EIGEN3_INCLUDE_DIRS}
-)
+# include_directories(include)
+# include_directories(
+#   ${EIGEN3_INCLUDE_DIRS}
+# )
 
 # Create Cpp executable
-# add_executable(pure_pursuit_node src/pure_pursuit_node.cpp)
+# add_executable(rrt_node src/rrt_node.cpp src/rrt.cpp)
 
 # ament_target_dependencies(
-#   pure_pursuit_node 
+#   rrt_node 
 #   rclcpp geometry_msgs ackermann_msgs nav_msgs sensor_msgs std_msgs visualization_msgs tf2_ros
 # )
 
 # Install Cpp executables
 # install(TARGETS
-#   pure_pursuit_node
-#   DESTINATION lib/${PROJECT_NAME}
-# )
+#   rrt_node
+#   DESTINATION lib/${PROJECT_NAME})
 
 # Install Python modules
 ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-  scripts/pure_pursuit_node.py
-  scripts/final_race_pure_pursuit_node.py
+  scripts/rrt_node.py
+  scripts/motion_planning_pure_pursuit_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -72,3 +70,4 @@ if(BUILD_TESTING)
 endif()
 
 ament_package()
+
