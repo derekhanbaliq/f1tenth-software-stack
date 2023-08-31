@@ -259,25 +259,25 @@ class PurePursuit(Node):
 
         return point
 
-    def getVelocity(self):
-        minV = 4.0
-        nominalV = 8.0
-        lowerMultiplier = 4.0
-        upperMultiplier = 5.5
-        gain = 1.25
+    # def getVelocity(self):
+    #     minV = 4.0
+    #     nominalV = 8.0
+    #     lowerMultiplier = 4.0
+    #     upperMultiplier = 5.5
+    #     gain = 1.25
 
-        lowerL = lowerMultiplier * self.L
-        upperL = upperMultiplier * self.L
-        speedTarget = self.getNearTargetPoint(self.rot, lowerL, upperL)
-        # speedTarget = self.get_closest_point_beyond_lookahead_dist(self.distances)
-        translatedSpeedTarget = self.translatePoint(speedTarget)
+    #     lowerL = lowerMultiplier * self.L
+    #     upperL = upperMultiplier * self.L
+    #     speedTarget = self.getNearTargetPoint(self.rot, lowerL, upperL)
+    #     # speedTarget = self.get_closest_point_beyond_lookahead_dist(self.distances)
+    #     translatedSpeedTarget = self.translatePoint(speedTarget)
 
-        theta = np.arctan2(translatedSpeedTarget[1], translatedSpeedTarget[0])
-        theta = np.abs(theta)
-        scaler = 1 - (gain * theta / (np.pi / 2.0))
-        velocity = nominalV * scaler
+    #     theta = np.arctan2(translatedSpeedTarget[1], translatedSpeedTarget[0])
+    #     theta = np.abs(theta)
+    #     scaler = 1 - (gain * theta / (np.pi / 2.0))
+    #     velocity = nominalV * scaler
         
-        return np.clip(velocity, minV, nominalV)
+    #     return np.clip(velocity, minV, nominalV)
 
     def translatePoint(self, targetPoint):
         H = np.zeros((4, 4))

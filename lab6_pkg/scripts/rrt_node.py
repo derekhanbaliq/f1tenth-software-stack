@@ -186,7 +186,6 @@ class RRT(Node):
 
         pose_topic = "/pf/viz/inferred_pose" if self.is_real else "/ego_racecar/odom"  # pose_topic = "ego_racecar/odom"
         scan_topic = "/scan"
-        drive_topic = "/drive"
         # laser_marker_topic = "/laser_marker"
         obs_marker_topic = "/obs_marker"
         # tree_marker_topic = "/tree_marker"
@@ -205,9 +204,6 @@ class RRT(Node):
 
         self.pp_goal_point_sub = self.create_subscription(Point, pp_goal_topic, self.pp_callback, 1)
         self.pp_goal_point_sub
-
-        self.drive_pub = self.create_publisher(AckermannDriveStamped, drive_topic, 1)
-        self.drive_msg = AckermannDriveStamped()
 
         # create other publishers that you might need
         # self.laser_marker_pub = self.create_publisher(Marker, laser_marker_topic, 1)  # for debugging
@@ -270,7 +266,7 @@ class RRT(Node):
 
         # cartesian coordinates in car frame
         obs_data_local = np.array([proc_ranges * np.cos(proc_yaws), proc_ranges * np.sin(proc_yaws)])
-        obs_data_local = np.vstack((obs_data_local, np.zeros(len(proc_ranges))))  # 3 x 108
+        obs_data_local = np.vstack((obs_data_local, np.zeros(len(proc_ranges))))  # 3 x 108, [x, y, 0.0]
         # print("local obs data = {}".format(obs_data_local))
         # print(obs_data_local.shape)
         
@@ -302,6 +298,7 @@ class RRT(Node):
             return 
 
         r_graph = RRTGraph(self.start, self.occ_grid_map.grid_map)
+        
         # RRT Node is operating for 
         if not self.RRT_star:
             while True:
