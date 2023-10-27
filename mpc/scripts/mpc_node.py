@@ -129,7 +129,7 @@ class MPC(Node):
         if self.is_real:
             vehicle_state.v = -1 * vehicle_state.v  # negate the monitoring speed
 
-        # TODO: Calculate the next reference trajectory for the next T steps with current vehicle pose.
+        # TODO: Calculate the reference trajectory for the next T steps with current vehicle pose.
         # ref_x, ref_y, ref_yaw, ref_v are columns of self.waypoints
         ref_path = self.calc_ref_trajectory(vehicle_state, self.waypoints[:, 1], self.waypoints[:, 2], self.waypoints[:, 3], self.waypoints[:, 5])
         # print(ref_path)
@@ -544,7 +544,6 @@ class MPC(Node):
 
         # Call the Motion Prediction function: Predict the vehicle motion for x-steps
         path_predict = self.predict_motion(x0, oa, od, ref_path)
-        # sth to be done to fix the path?
         self.visualize_pred_path_in_rviz(path_predict)
 
         poa, pod = oa[:], od[:]

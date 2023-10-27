@@ -1,13 +1,6 @@
 # f1tenth-software-stack
 
-F1TENTH software stack is the integrated repository of ESE 615 Team 6 of Spring 2023. 
-
-For the setup of F1TENTH cars, please review Repository [f1tenth_system](https://github.com/f1tenth/f1tenth_system). Modifications are needed based on specific cars. 
-
-For the setup of F1TENTH ROS Simulator, please review Repository [f1tenth_gym_ros](https://github.com/f1tenth/f1tenth_gym_ros). 
-
-For the setup of F1TENTH Gym, please review Repository [f1tenth_gym](https://github.com/f1tenth/f1tenth_gym). 
-
+F1TENTH software stack is the integrated repository of ESE 615 Team 6 of Spring 2023.
 
 ## Run Lab 1 Package
 ```bash
