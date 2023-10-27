@@ -54,6 +54,7 @@ ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
   scripts/agent_node.py
+  scripts/agent_mlp.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

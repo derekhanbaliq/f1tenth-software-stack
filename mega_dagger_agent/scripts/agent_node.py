@@ -20,6 +20,9 @@ from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker, MarkerArray
 
+import torch
+from agent_mlp import AgentPolicyMLP
+
 
 class MEGADAggerAgent(Node):
     def __init__(self):
@@ -30,7 +33,6 @@ class MEGADAggerAgent(Node):
         # Topics & Subs, Pubs
         lidarscan_topic = '/scan'
         drive_topic = '/drive'
-        odom_topic = '/pf/viz/inferred_pose'
 
         # Subscribe to scan
         self.sub_scan = self.create_subscription(LaserScan, lidarscan_topic, self.scan_callback, 10)
@@ -39,13 +41,20 @@ class MEGADAggerAgent(Node):
         self.pub_drive = self.create_publisher(AckermannDriveStamped, drive_topic, 10)
         self.drive_msg = AckermannDriveStamped()
 
+        # MEGA-DAgger config
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.agent = AgentPolicyMLP(observ_dim=108, hidden_dim=256, action_dim=2, lr=0.001, device=device)
+        model_path = '/home/derek/sim_ws/src/mega_dagger_agent/models/mega_dagger.pkl'
+        self.agent.load_state_dict(torch.load(model_path, map_location=device))
+
     def scan_callback(self, scan_msg):
-        scan = np.array(scan_msg.ranges[:-1]).flatten()
-        print(scan.shape)
+        scan = np.array(scan_msg.ranges[::10]).flatten()  # 108
+        # print(scan.shape)
 
         # NN input scan, output steering & speed
-        steering = 0.0
-        speed = 0.5
+        agent_action = self.agent.get_action(scan)
+        steering = float(agent_action[0])
+        speed = float(agent_action[1])
 
         # publish drive message
         self.drive_msg.drive.steering_angle = steering
