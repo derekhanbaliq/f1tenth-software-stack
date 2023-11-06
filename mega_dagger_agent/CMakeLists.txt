@@ -55,6 +55,7 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   scripts/agent_node.py
   scripts/agent_mlp.py
+  scripts/oppo_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

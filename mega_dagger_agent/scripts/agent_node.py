@@ -33,6 +33,7 @@ class MEGADAggerAgent(Node):
         # Topics & Subs, Pubs
         lidarscan_topic = '/scan'
         drive_topic = '/drive'
+        visualization_topic = '/visualization_marker_array'
 
         # Subscribe to scan
         self.sub_scan = self.create_subscription(LaserScan, lidarscan_topic, self.scan_callback, 10)
@@ -40,11 +41,17 @@ class MEGADAggerAgent(Node):
         # Publish to drive
         self.pub_drive = self.create_publisher(AckermannDriveStamped, drive_topic, 10)
         self.drive_msg = AckermannDriveStamped()
+        # Publish to visualization
+        self.pub_vis = self.create_publisher(MarkerArray, visualization_topic, 1)
+        self.markerArray = MarkerArray()
+
+        # waypoints init
+        self.visualization_init()
 
         # MEGA-DAgger config
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.agent = AgentPolicyMLP(observ_dim=108, hidden_dim=256, action_dim=2, lr=0.001, device=device)
-        model_path = '/home/derek/sim_ws/src/mega_dagger_agent/models/mega_dagger.pkl'
+        model_path = '/home/derek/sim_ws/src/mega_dagger_agent/models/skir/mega_dagger.pkl'
         self.agent.load_state_dict(torch.load(model_path, map_location=device))
 
     def scan_callback(self, scan_msg):
@@ -61,6 +68,50 @@ class MEGADAggerAgent(Node):
         self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * speed
         self.pub_drive.publish(self.drive_msg)
         print("steering = {}, speed = {}".format(round(steering, 5), round(speed, 5)))
+
+    def visualization_init(self):
+        traj_path = '/home/derek/sim_ws/src/mega_dagger_agent/trajs/'
+        traj_data = np.loadtxt(traj_path + 'lane_2_traj_race_cl.csv', delimiter=';', skiprows=3)  # csv data
+        optimal_traj_data = np.loadtxt(traj_path + 'lane_2_traj_race_cl_optimal.csv', delimiter=';', skiprows=3)
+
+        # blue
+        traj_data_marker = Marker()
+        traj_data_marker.header.frame_id = 'map'
+        traj_data_marker.type = Marker.POINTS
+        traj_data_marker.color.b = 0.75
+        traj_data_marker.color.a = 1.0
+        traj_data_marker.scale.x = 0.05
+        traj_data_marker.scale.y = 0.05
+        traj_data_marker.id = 0
+        traj_data_marker.points = [Point(x = wpt[0], y = wpt[1], z = 0.0) for wpt in traj_data[:, 1:3]]
+
+        # cyan
+        optimal_traj_data_marker = Marker()
+        optimal_traj_data_marker.header.frame_id = 'map'
+        optimal_traj_data_marker.type = Marker.POINTS
+        optimal_traj_data_marker.color.g = 0.75
+        optimal_traj_data_marker.color.b = 0.75
+        optimal_traj_data_marker.color.a = 1.0
+        optimal_traj_data_marker.scale.x = 0.05
+        optimal_traj_data_marker.scale.y = 0.05
+        optimal_traj_data_marker.id = 1
+        optimal_traj_data_marker.points = [Point(x = wpt[0], y = wpt[1], z = 0.0) for wpt in optimal_traj_data[:, 1:3]]
+
+        # red
+        frame_marker = Marker()
+        frame_marker.header.frame_id = 'map'
+        frame_marker.type = Marker.LINE_STRIP
+        frame_marker.color.r = 0.75
+        frame_marker.color.a = 1.0
+        frame_marker.scale.x = 0.1
+        frame_marker.scale.y = 0.1
+        frame_marker.id = 2
+        frame_marker.points = [Point(x = 0.0, y = 0.0, z = 0.0), Point(x = 1.0, y = 0.0, z = 0.0), 
+                                Point(x = 0.0, y = 0.0, z = 0.0), Point(x = 0.0, y = 1.0, z = 0.0),
+                                Point(x = 0.0, y = 0.0, z = 0.0), Point(x = 0.0, y = 0.0, z = 1.0)]
+
+        self.markerArray.markers = [traj_data_marker, optimal_traj_data_marker, frame_marker]
+        self.pub_vis.publish(self.markerArray)
 
 
 def main(args=None):
