@@ -148,7 +148,7 @@ conda activate f110_mega-dagger
 ros2 run mega_dagger_agent agent_node.py  # switch self.is_real to change the sim / real states
 ```
 
-This is a general method to run deep learning methods on F1TENTH cars without TensorRT deployment. For detailed implementation, please check the **upper-lower machine communication** in ESE 615 Tutorial 6. For a general conda env cofig, please check the readme in [here](https://github.com/derekhanbaliq/LQR-based-Path-Tracking).
+This is a general method to run deep learning methods on F1TENTH cars without TensorRT deployment. For detailed implementation, please check the **upper-lower machine communication** in ESE 615 Tutorial 6. For a general conda env config, please check the readme in [here](https://github.com/derekhanbaliq/LQR-based-Path-Tracking).
 
 ## Wireless Visualization via Rviz2
 
