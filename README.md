@@ -20,17 +20,13 @@ ros2 launch lab1_pkg lab1_launch.py
 
 ## Run AEB in Sim
 
-Run the following commands in 3 terminals
 ```bash
 ros2 launch f1tenth_gym_ros gym_bridge_launch.py
 ros2 run safety_node safety_node.py
-ros2 run teleop_twist_keyboard teleop_twist_keyboard
+ros2 run teleop_twist_keyboard teleop_twist_keyboard  # control the keyboard
 ```
-and control the keyboard.
 
 ## Run Wall Following in Sim
-
-Run the following commands in 2 terminals
 
 ```bash
 ros2 launch f1tenth_gym_ros gym_bridge_launch.py
@@ -38,8 +34,6 @@ ros2 run wall_follow wall_follow_node.py
 ```
 
 ## Run Gap Following in Sim
-
-Run the following commands in 2 terminals
 
 ```bash
 ros2 launch f1tenth_gym_ros gym_bridge_launch.py
@@ -82,15 +76,13 @@ MAX_SPEED: float = 5.0  # maximum speed [m/s] ~ 5.0 for levine sim
 ```
 All the other parameters remain the same. 
 
-Go to levine_sim_launch.py, comment & uncomment the desired pure pursuit / LQR / MPC corresponding code to finish the config. 
+Go to levine_sim_launch.py, comment & uncomment the corresponding code of pure pursuit / LQR / MPC and execute through the launch file. 
 
-Go to terminal, run following command
 ```bash
 cd ~/sim_ws/
 colcon build
 ros2 launch bringup levine_sim_launch.py
 ```
-And the corresponding path tracking algorithm will execute.
 
 ## Run Motion Planning (RRT* + Pure Pursuit) in Sim
 
@@ -106,7 +98,6 @@ ros2 launch f1tenth_gym_ros gym_bridge_launch.py
 ros2 run lab6_pkg rrt_node.py
 ros2 run lab6_pkg motion_planning_pure_pursuit_node.py
 ```
-And the RRT* + pure pursuit will execute.
 
 ## Run Final Race (Gap Following + Pure Pursuit) in Sim
 
@@ -139,14 +130,25 @@ Modify the parameters in final_race_sim_launch.py as
 
 For obstacle avoidance, change the 2 parameters as **0.4** and **0.5** respectively.
 
-Go to terminal, run following command
-
 ```bash
 cd ~/sim_ws/
 colcon build
 ros2 launch bringup final_race_sim_launch.py
 ```
-And the gap following + pure pursuit will execute.
+
+## Run MEGA-DAgger Agent Node
+
+Add the map data and the trajectories, create the **f110_mega-dagger** conda environment, and run following commands
+
+```bash
+# first terminal
+ros2 launch f1tenth_gym_ros gym_bridge_launch.py
+# second terminal
+conda activate f110_mega-dagger
+ros2 run mega_dagger_agent agent_node.py  # switch self.is_real to change the sim / real states
+```
+
+This is a general method to run deep learning methods on F1TENTH cars without TensorRT deployment. For detailed implementation, please check the **upper-lower machine communication** in ESE 615 Tutorial 6. For a general conda env cofig, please check the readme in [here](https://github.com/derekhanbaliq/LQR-based-Path-Tracking).
 
 ## Wireless Visualization via Rviz2
 
@@ -161,4 +163,4 @@ rviz2  # on your native ubuntu and add the topics, start rviz2 before pf!
 
 ## Intro to Supported Repos
 
-**f1tenth_traj_gen**: trajectory generation repo for solving min curvature QP with F1TENTH params. The dev is based on [TUM&#39;s global traj optim repo](https://github.com/TUMFTM/global_racetrajectory_optimization). For f1tenth dev, the tuned parameter is locally stored in IL folder of Derek's OMEN-16 via Windows 11 OS.
+**f1tenth_traj_gen**: trajectory generation repo for solving min curvature QP with F1TENTH params. The dev is based on [global traj optim repo of TUM](https://github.com/TUMFTM/global_racetrajectory_optimization). For f1tenth dev, the tuned parameter is locally stored in IL folder of Derek's OMEN-16 via Windows 11 OS.
