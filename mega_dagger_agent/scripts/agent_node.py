@@ -51,11 +51,13 @@ class MEGADAggerAgent(Node):
         # MEGA-DAgger config
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.agent = AgentPolicyMLP(observ_dim=108, hidden_dim=256, action_dim=2, lr=0.001, device=device)
-        model_path = '/home/derek/sim_ws/src/mega_dagger_agent/models/skir/mega_dagger.pkl'
+        model_path = '/home/derek/sim_ws/src/mega_dagger_agent/models/skir2/mega_dagger.pkl'
         self.agent.load_state_dict(torch.load(model_path, map_location=device))
 
     def scan_callback(self, scan_msg):
         scan = np.array(scan_msg.ranges[::10]).flatten()  # 108
+        if self.is_real:
+            scan = scan[1:]
         # print(scan.shape)
 
         # NN input scan, output steering & speed
