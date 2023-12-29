@@ -26,9 +26,9 @@ class PurePursuit(Node):
         self.is_ascending = True  # waypoint indices are ascending during tracking
 
         # Topics & Subs, Pubs
-        drive_topic = '/drive'
-        odom_topic = '/pf/viz/inferred_pose' if self.is_real else '/ego_racecar/odom'
-        visualization_topic = '/visualization_marker_array'
+        drive_topic = '/opp_drive'
+        odom_topic = '/pf/viz/inferred_pose' if self.is_real else '/opp_racecar/odom'
+        visualization_topic = '/opp_visualization_marker_array'
 
         # Subscribe to POSE
         self.sub_pose = self.create_subscription(PoseStamped if self.is_real else Odometry, odom_topic, self.pose_callback, 1)
@@ -127,18 +127,19 @@ class PurePursuit(Node):
         return convertedTarget
     
     def visualization_init(self):
-        # Blue
+        # orange
         self.waypointMarker = Marker()
         self.waypointMarker.header.frame_id = 'map'
         self.waypointMarker.type = Marker.POINTS
-        self.waypointMarker.color.b = 0.75
+        self.waypointMarker.color.r = 1.0
+        self.waypointMarker.color.g = 0.5
         self.waypointMarker.color.a = 1.0
         self.waypointMarker.scale.x = 0.05
         self.waypointMarker.scale.y = 0.05
         self.waypointMarker.id = 0
         self.waypointMarker.points = [Point(x = wpt[0], y = wpt[1], z = 0.0) for wpt in self.waypoints]
 
-        # Red
+        # red
         self.targetMarker = Marker()
         self.targetMarker.header.frame_id = 'map'
         self.targetMarker.type = Marker.POINTS
@@ -148,12 +149,12 @@ class PurePursuit(Node):
         self.targetMarker.scale.y = 0.2
         self.targetMarker.id = 1
 
-        # Cyan
+        # yellow
         self.closestMarker = Marker()
         self.closestMarker.header.frame_id = 'map'
         self.closestMarker.type = Marker.POINTS
-        self.closestMarker.color.b = 0.75
-        self.closestMarker.color.g = 0.75
+        self.closestMarker.color.r = 0.8
+        self.closestMarker.color.g = 0.8
         self.closestMarker.color.a = 1.0
         self.closestMarker.scale.x = 0.2
         self.closestMarker.scale.y = 0.2
