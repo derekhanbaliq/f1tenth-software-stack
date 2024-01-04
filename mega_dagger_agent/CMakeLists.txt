@@ -56,6 +56,8 @@ install(PROGRAMS
   scripts/agent_node.py
   scripts/agent_mlp.py
   scripts/oppo_node.py
+  scripts/fake_scan.py
+  scripts/laser_models.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

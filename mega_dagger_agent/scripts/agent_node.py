@@ -31,7 +31,7 @@ class MEGADAggerAgent(Node):
         self.is_real = False
 
         # Topics & Subs, Pubs
-        lidarscan_topic = '/scan'
+        lidarscan_topic = '/fake_scan'  # /scan or /fake_scan
         drive_topic = '/drive'
         visualization_topic = '/visualization_marker_array'
 
@@ -44,6 +44,9 @@ class MEGADAggerAgent(Node):
         # Publish to visualization
         self.pub_vis = self.create_publisher(MarkerArray, visualization_topic, 1)
         self.markerArray = MarkerArray()
+
+        # Timer
+        self.timer = self.create_timer(0.1, self.timer_callback)  # timer period = 0.01s
 
         # waypoints init
         self.visualization_init()
@@ -69,8 +72,12 @@ class MEGADAggerAgent(Node):
         # publish drive message
         self.drive_msg.drive.steering_angle = steering
         self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * speed
+        # self.pub_drive.publish(self.drive_msg)
+        # print("steering = {}, speed = {}".format(round(steering, 5), round(speed, 5)))
+
+    def timer_callback(self):
         self.pub_drive.publish(self.drive_msg)
-        print("steering = {}, speed = {}".format(round(steering, 5), round(speed, 5)))
+        print("steering = {}, speed = {}".format(round(self.drive_msg.drive.steering_angle, 5), round(self.drive_msg.drive.speed, 5)))
 
     def visualization_init(self):
         traj_path = '/home/derek/sim_ws/src/mega_dagger_agent/trajs/'

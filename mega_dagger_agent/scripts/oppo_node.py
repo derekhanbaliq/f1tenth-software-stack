@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+"""
+    MEGA-DAgger Opponenet - Pure Pursuit
+    Author: Derek Zhou
+    References: https://github.com/derekhanbaliq/f1tenth-software-stack
+"""
+
 import numpy as np
 from scipy.spatial import distance, transform
 import os
@@ -163,7 +169,7 @@ class PurePursuit(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    print("PurePursuit Initialized")
+    print("Pure Pursuit Initialized")
     pure_pursuit_node = PurePursuit()
     rclpy.spin(pure_pursuit_node)
 
