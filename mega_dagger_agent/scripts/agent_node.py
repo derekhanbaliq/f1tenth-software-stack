@@ -28,15 +28,15 @@ class MEGADAggerAgent(Node):
     def __init__(self):
         super().__init__('agent_node')
 
-        self.is_real = False
+        self.is_real = True
 
         # Topics & Subs, Pubs
-        lidarscan_topic = '/fake_scan'  # /scan or /fake_scan
+        self.lidarscan_topic = '/fake_scan'  # /scan or /fake_scan
         drive_topic = '/drive'
         visualization_topic = '/visualization_marker_array'
 
         # Subscribe to scan
-        self.sub_scan = self.create_subscription(LaserScan, lidarscan_topic, self.scan_callback, 10)
+        self.sub_scan = self.create_subscription(LaserScan, self.lidarscan_topic, self.scan_callback, 10)
         self.sub_scan  # prevent unused variable warning
         # Publish to drive
         self.pub_drive = self.create_publisher(AckermannDriveStamped, drive_topic, 10)
@@ -59,19 +59,20 @@ class MEGADAggerAgent(Node):
 
     def scan_callback(self, scan_msg):
         scan = np.array(scan_msg.ranges[::10]).flatten()  # 108
-        if self.is_real:
+        if self.is_real and self.lidarscan_topic == '/scan':
             scan = scan[1:]
         # print(scan.shape)
 
         # NN input scan, output steering & speed
         agent_action = self.agent.get_action(scan)
         steering = float(agent_action[0])
-        speed = min(float(agent_action[1]), 1.5)
+        speed = min(float(agent_action[1]), 1.0)  # tuning this!
         # print(speed)
 
         # publish drive message
         self.drive_msg.drive.steering_angle = steering
-        self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * speed
+        # self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * speed
+        self.drive_msg.drive.speed = speed
         # self.pub_drive.publish(self.drive_msg)
         # print("steering = {}, speed = {}".format(round(steering, 5), round(speed, 5)))
 

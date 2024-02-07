@@ -31,7 +31,7 @@ class FakeScan(Node):
     def __init__(self):
         super().__init__('fake_scan_node')
 
-        self.is_real = False
+        self.is_real = True
 
         # Topics & Subs, Pubs
         odom_topic = '/pf/viz/inferred_pose' if self.is_real else '/ego_racecar/odom'
