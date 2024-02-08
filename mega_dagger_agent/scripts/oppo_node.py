@@ -90,7 +90,7 @@ class PurePursuit(Node):
         gamma = np.clip(gamma, -0.35, 0.35)
         self.drive_msg.drive.steering_angle = gamma
         # self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * self.ref_speed[self.closest_index]
-        self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * 1.0  # constant speed for opponent
+        self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * 0.5  # constant speed for opponent
         self.pub_drive.publish(self.drive_msg)
         print("steering = {}, speed = {}".format(round(self.drive_msg.drive.steering_angle, 2), round(self.drive_msg.drive.speed, 2)))
 

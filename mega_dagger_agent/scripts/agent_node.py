@@ -28,7 +28,7 @@ class MEGADAggerAgent(Node):
     def __init__(self):
         super().__init__('agent_node')
 
-        self.is_real = True
+        self.is_real = False
 
         # Topics & Subs, Pubs
         self.lidarscan_topic = '/fake_scan'  # /scan or /fake_scan

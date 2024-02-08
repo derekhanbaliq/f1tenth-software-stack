@@ -58,6 +58,7 @@ install(PROGRAMS
   scripts/oppo_node.py
   scripts/fake_scan_node.py
   scripts/laser_models.py
+  scripts/collision_models.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
