@@ -32,11 +32,11 @@ class FakeScan(Node):
     def __init__(self):
         super().__init__('fake_scan_node')
 
-        self.is_real = False
+        self.is_real = True
 
         # Topics & Subs, Pubs
         odom_topic = '/pf/viz/inferred_pose' if self.is_real else '/ego_racecar/odom'
-        oppo_odom_topic = '/ego_racecar/opp_odom'  # TODO: is_real case
+        oppo_odom_topic = '/oppo_odom' if self.is_real else '/ego_racecar/opp_odom'
         fake_lidar_scan_topic = '/fake_scan'
         # lidar_scan_topic = '/scan'  # for debugging fake_scan
         # visualization_topic = '/fake_scan_visualization_marker_array'
