@@ -32,20 +32,20 @@ class FakeScan(Node):
     def __init__(self):
         super().__init__('fake_scan_node')
 
-        self.is_real = True
+        self.is_real = False
 
         # Topics & Subs, Pubs
         odom_topic = '/pf/viz/inferred_pose' if self.is_real else '/ego_racecar/odom'
         oppo_odom_topic = '/oppo_odom' if self.is_real else '/ego_racecar/opp_odom'
         fake_lidar_scan_topic = '/fake_scan'
         # lidar_scan_topic = '/scan'  # for debugging fake_scan
-        # visualization_topic = '/fake_scan_visualization_marker_array'
+        visualization_topic = '/fake_scan_visualization_marker_array'
 
         # Subscribe to pose
         self.sub_pose = self.create_subscription(PoseStamped if self.is_real else Odometry, odom_topic, self.pose_callback, 1)
         self.sub_pose  # prevent unused variable warning
-        # Subscribe to oppo pose  # TODO: is_real case
-        self.sub_oppo_pose = self.create_subscription(Odometry, oppo_odom_topic, self.oppo_pose_callback, 1)  # TODO: real case
+        # Subscribe to oppo pose
+        self.sub_oppo_pose = self.create_subscription(PoseStamped if self.is_real else Odometry, oppo_odom_topic, self.oppo_pose_callback, 1)
         self.sub_oppo_pose
         # Subscribe to fake lidar scan for debugging
         # self.sub_scan = self.create_subscription(LaserScan, lidar_scan_topic, self.scan_callback, 5)
@@ -55,11 +55,11 @@ class FakeScan(Node):
         self.pub_fake_scan = self.create_publisher(LaserScan, fake_lidar_scan_topic, 1)
         self.fake_scan_msg = LaserScan()
         # Publish to visualization
-        # self.pub_vis = self.create_publisher(MarkerArray, visualization_topic, 1)
-        # self.markerArray = MarkerArray()
+        self.pub_vis = self.create_publisher(Marker, visualization_topic, 1)
+        self.fake_scan_marker = Marker()
 
         # Timer
-        self.timer = self.create_timer(0.01, self.timer_callback)  # timer period = 0.01s
+        self.timer = self.create_timer(0.1, self.timer_callback)  # timer period = 0.01s
 
         # Init setup & parameters
         self.fake_scan_init()
@@ -79,14 +79,8 @@ class FakeScan(Node):
         print('yaw = {}'.format(yaw))
 
         # Use laser_models to get scan from position and theta
-        ego_scan = self.F110ScanSimulator.scan([x, y, yaw], None).flatten()  # this is not pos!
-
-        # Get the blocked view scan
-        blocked_scan_mask = laser_models.ray_cast(np.array([x, y, yaw]), 10. * np.ones((1080, )), np.linspace(-2.35, 2.35, num=1080), self.oppo_vertices)  # with 10 m clip
-        ego_scan = np.minimum(ego_scan, blocked_scan_mask)  # get blocked scan elementwisely
-
-        # Load fake scan data
-        self.fake_scan_msg.ranges = ego_scan.tolist()
+        self.ego_pose = [x, y, yaw]
+        self.ego_scan = self.F110ScanSimulator.scan(self.ego_pose, None).flatten()  # this is not pos!
 
     def oppo_pose_callback(self, pose_msg):
         # Get current pose
@@ -102,15 +96,25 @@ class FakeScan(Node):
         print('oppo yaw = {}'.format(oppo_yaw))
 
         # Update oppo car pos
-        self.oppo_vertices = collision_models.get_vertices(np.array([x, y, oppo_yaw]), 0.58, 0.31)
+        self.oppo_vertices = collision_models.get_vertices(np.array([x + np.cos(oppo_yaw) * 0.275, y + np.sin(oppo_yaw) * 0.275, oppo_yaw]), 0.58, 0.31)
         print("oppo_vertices = ", self.oppo_vertices)
 
     def timer_callback(self):
         timestamp = self.get_clock().now().to_msg()
 
+        # Get the blocked view scan
+        blocked_scan_mask = laser_models.ray_cast(np.array(self.ego_pose), 10. * np.ones((1080, )), np.linspace(-2.35, 2.35, num=1080), self.oppo_vertices)  # with 10 m clip
+        new_scan = np.minimum(self.ego_scan, blocked_scan_mask)  # get blocked scan elementwisely
+
         # Publish fake scan data
         self.fake_scan_msg.header.stamp = timestamp
+        self.fake_scan_msg.header.frame_id = 'laser' if self.is_real else 'ego_racecar/laser'  # TODO: validate this
+        self.fake_scan_msg.ranges = new_scan.tolist()
         self.pub_fake_scan.publish(self.fake_scan_msg)
+        print("publishing fake scan, 10 Hz")
+
+        # Publish fake scan visualization
+        # self.visualize_fake_scan()
 
     def scan_callback(self, scan_msg):
         # Check scan and fake scan
@@ -137,10 +141,26 @@ class FakeScan(Node):
         self.F110ScanSimulator = laser_models.ScanSimulator2D(1080, 4.7)
         self.F110ScanSimulator.set_map('/home/derek/sim_ws/src/mega_dagger_agent/maps/skir_mega_dagger.yaml', '.pgm')
         
+        self.ego_pose = [0.0, 0.0, 0.0]
+        self.ego_scan = np.full(1080, 10)
         self.oppo_vertices = collision_models.get_vertices(np.array([2.0, 0.5, 0.0]), 0.58, 0.31)
 
     def visualization_init(self):
-        pass
+        # cyan
+        self.fake_scan_marker.header.frame_id = 'map'
+        self.fake_scan_marker.type = Marker.POINTS
+        self.fake_scan_marker.color.g = 0.75
+        self.fake_scan_marker.color.b = 0.75
+        self.fake_scan_marker.color.a = 1.0
+        self.fake_scan_marker.scale.x = 0.5
+        self.fake_scan_marker.scale.y = 0.5
+        self.fake_scan_marker.id = 1
+
+    def visualize_fake_scan(self):
+        self.fake_scan_marker.points = [Point(x = 1.0, y = 1.0, z = 1.0)]
+        # print(len(self.fake_scan_msg.ranges))
+
+        self.pub_vis.publish(self.fake_scan_marker)
 
 
 def main(args=None):
