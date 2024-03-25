@@ -95,7 +95,7 @@ class FakeScan(Node):
         oppo_yaw = math.atan2(2 * (q[3] * q[2] + q[0] * q[1]), 1 - 2 * (q[1] ** 2 + q[2] ** 2))
         print('oppo yaw = {}'.format(oppo_yaw))
 
-        # Update oppo car pos
+        # Update oppo car vertices
         self.oppo_vertices = collision_models.get_vertices(np.array([x + np.cos(oppo_yaw) * 0.275, y + np.sin(oppo_yaw) * 0.275, oppo_yaw]), 0.58, 0.31)
         print("oppo_vertices = ", self.oppo_vertices)
 
@@ -103,12 +103,12 @@ class FakeScan(Node):
         timestamp = self.get_clock().now().to_msg()
 
         # Get the blocked view scan
-        blocked_scan_mask = laser_models.ray_cast(np.array(self.ego_pose), 10. * np.ones((1080, )), np.linspace(-2.35, 2.35, num=1080), self.oppo_vertices)  # with 10 m clip
+        blocked_scan_mask = laser_models.ray_cast(np.array(self.ego_pose), 20. * np.ones((1080, )), np.linspace(-2.35, 2.35, num=1080), self.oppo_vertices)  # with 10 m clip
         new_scan = np.minimum(self.ego_scan, blocked_scan_mask)  # get blocked scan elementwisely
 
         # Publish fake scan data
         self.fake_scan_msg.header.stamp = timestamp
-        self.fake_scan_msg.header.frame_id = 'laser' if self.is_real else 'ego_racecar/laser'  # TODO: validate this
+        
         self.fake_scan_msg.ranges = new_scan.tolist()
         self.pub_fake_scan.publish(self.fake_scan_msg)
         print("publishing fake scan, 10 Hz")
@@ -131,7 +131,7 @@ class FakeScan(Node):
         plt.close()
 
     def fake_scan_init(self):
-        self.fake_scan_msg.header.frame_id = '/ego_racecar/fake_scan'
+        self.fake_scan_msg.header.frame_id = 'laser' if self.is_real else 'ego_racecar/laser'  # TODO: validate this
         self.fake_scan_msg.angle_min = -4.7 / 2.
         self.fake_scan_msg.angle_max = 4.7 / 2.
         self.fake_scan_msg.angle_increment = 4.7 / 1080

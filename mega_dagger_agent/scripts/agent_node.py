@@ -66,7 +66,9 @@ class MEGADAggerAgent(Node):
         # NN input scan, output steering & speed
         agent_action = self.agent.get_action(scan)
         steering = float(agent_action[0])
-        speed = min(float(agent_action[1]), 1.0)  # tuning this!
+        speed = float(agent_action[1])
+        speed = min(float(agent_action[1]) / 2, 1.5)
+        # speed = min(float(agent_action[1] / 3.0), 1.0)  # tuning this!
         # print(speed)
 
         # publish drive message

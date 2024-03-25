@@ -52,7 +52,7 @@ class PurePursuit(Node):
         
         self.ref_speed = traj_data[:, 5]  # max speed 5 m/s in sim
 
-        self.visualization_init()
+        # self.visualization_init()
 
         # sim params
         self.L = 1.0
@@ -90,16 +90,17 @@ class PurePursuit(Node):
         gamma = np.clip(gamma, -0.35, 0.35)
         self.drive_msg.drive.steering_angle = gamma
         # self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * self.ref_speed[self.closest_index]
-        self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * 0.5  # constant speed for opponent
+        # self.drive_msg.drive.speed = (-1.0 if self.is_real else 1.0) * 0.5  # constant speed for opponent
+        self.drive_msg.drive.speed = 0.75
         self.pub_drive.publish(self.drive_msg)
         print("steering = {}, speed = {}".format(round(self.drive_msg.drive.steering_angle, 2), round(self.drive_msg.drive.speed, 2)))
 
         # Visualizing points
-        self.targetMarker.points = [Point(x = targetPoint[0], y = targetPoint[1], z = 0.0)]
-        self.closestMarker.points = [Point(x = self.closestPoint[0], y = self.closestPoint[1], z = 0.0)]
+        # self.targetMarker.points = [Point(x = targetPoint[0], y = targetPoint[1], z = 0.0)]
+        # self.closestMarker.points = [Point(x = self.closestPoint[0], y = self.closestPoint[1], z = 0.0)]
 
-        self.markerArray.markers = [self.waypointMarker, self.targetMarker, self.closestMarker]
-        self.pub_vis.publish(self.markerArray)
+        # self.markerArray.markers = [self.waypointMarker, self.targetMarker, self.closestMarker]
+        # self.pub_vis.publish(self.markerArray)
         
     def get_closest_point_beyond_lookahead_dist(self, threshold):
         point_index = self.closest_index
